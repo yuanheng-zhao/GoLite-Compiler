@@ -1,0 +1,3 @@
+package test1;
+import "fmt";
+a = 3;

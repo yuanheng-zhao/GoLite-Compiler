@@ -29,7 +29,7 @@ const (
 
 	DOT     = "."
 	COMMA   = ","
-	QTDMARK = '"'
+	QTDMARK = "\""
 	LBRACE  = "{"
 	RBRACE  = "}"
 	LPAREN  = "("
