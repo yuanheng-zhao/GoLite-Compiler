@@ -17,6 +17,7 @@ type Scanner struct {
 
 	number_compiled *regexp.Regexp
 	id_compiled     *regexp.Regexp
+	whitespaces     *regexp.Regexp
 
 	keywords map[string]token.TokenType
 	symbols  map[string]token.TokenType
@@ -26,6 +27,7 @@ func New(input_reader *bufio.Reader) *Scanner {
 	scanner := &Scanner{reader: input_reader, lexeme: ""}
 	scanner.number_compiled, _ = regexp.Compile("^[0-9]+$")
 	scanner.id_compiled, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9]*$")
+	scanner.whitespaces, _ = regexp.Compile("\\s+")
 
 	keywords_map := map[string]token.TokenType{
 		"int":    token.INT,
@@ -93,21 +95,24 @@ func (l *Scanner) NextToken() token.Token {
 					return token.Token{Type: token.EOF, Literal: "eof"}
 				}
 				if l.number_compiled.MatchString(l.lexeme) {
+					temp_lexeme := l.lexeme
 					l.lexeme = ""
-					return token.Token{Type: token.NUM, Literal: l.lexeme}
+					return token.Token{Type: token.NUM, Literal: temp_lexeme}
 				}
 				if tok, exist := l.symbols[l.lexeme]; exist {
+					temp_lexeme := l.lexeme
 					l.lexeme = ""
-					return token.Token{Type: tok, Literal: l.lexeme}
+					return token.Token{Type: tok, Literal: temp_lexeme}
 				}
 				if l.id_compiled.MatchString(l.lexeme) {
+					temp_lexeme := l.lexeme
 					// check if it matches with some keywords (e.g. print, var)
 					if tok, exist := l.keywords[l.lexeme]; exist {
 						l.lexeme = ""
-						return token.Token{Type: tok, Literal: l.lexeme}
+						return token.Token{Type: tok, Literal: temp_lexeme}
 					}
 					l.lexeme = ""
-					return token.Token{Type: token.ID, Literal: l.lexeme}
+					return token.Token{Type: token.ID, Literal: temp_lexeme}
 				}
 
 			} else {
@@ -122,12 +127,16 @@ func (l *Scanner) NextToken() token.Token {
 				continue
 			}
 
-			if len(l.lexeme) == 0 {
+			if len(l.lexeme) == 0 && !l.whitespaces.MatchString(string(r)) {
 				return token.Token{Type: token.ILLEGAL, Literal: "ILLEGAL"}
 			}
 
-			if r != ' ' && r != '\n' && r != '\t' {
-				l.reader.UnreadRune() // rollback
+			// if r != ' ' && r != '\n' && r != '\t' {
+			// 	l.reader.UnreadRune() // rollback
+			// }
+			// rollback if not a whitespace/newline/carriage return/etc
+			if !l.whitespaces.MatchString(string(r)) {
+				l.reader.UnreadRune()
 			}
 
 			temp_lexeme := l.lexeme
