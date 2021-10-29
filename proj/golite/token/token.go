@@ -1,5 +1,9 @@
 package token
 
+import (
+	"fmt"
+)
+
 type TokenType string
 
 const (
@@ -57,6 +61,11 @@ const (
 )
 
 type Token struct {
-	Type    TokenType
-	Literal string
+	Type        TokenType
+	Literal     string
+	type_lookup string
+}
+
+func (tok Token) String() string {
+	return fmt.Sprintf("%T, %v", tok.Type, tok.Literal)
 }

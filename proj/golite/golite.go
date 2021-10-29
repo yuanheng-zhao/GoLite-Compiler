@@ -28,9 +28,17 @@ func main() {
 		}
 		reader := bufio.NewReader(f_obj)
 		my_scanner := scanner.New(reader)
-		var tok token.TokenType
-		for tok != token.EOF {
-			tok = my_scanner.NextToken().Type
+
+		// var tok token.TokenType
+		// for tok != token.EOF {
+		// 	tok = my_scanner.NextToken().Type
+		// 	fmt.Println(tok)
+		// }
+
+		var tok token.Token
+		eof_token := token.Token{Type: token.EOF, Literal: "eof"}
+		for tok != eof_token {
+			tok = my_scanner.NextToken()
 			fmt.Println(tok)
 		}
 	}
