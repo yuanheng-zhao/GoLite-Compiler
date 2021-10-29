@@ -128,9 +128,14 @@ func (l *Scanner) NextToken() token.Token {
 				log.Fatal(err)
 			}
 		} else {
+			temp_line_number := l.lineNumber
 			if l.isComment {
 				if r == '\n' || r == '\r' { // newline
 					l.isComment = false
+					r_next, _, _ := l.reader.ReadRune()
+					if r_next != '\n' {
+						l.reader.UnreadRune()
+					}
 					l.lineNumber++
 				}
 				continue
@@ -143,7 +148,7 @@ func (l *Scanner) NextToken() token.Token {
 			}
 
 			if len(l.lexeme) == 0 && !l.whitespaces.MatchString(string(r)) {
-				return token.Token{Type: token.ILLEGAL, Literal: "ILLEGAL", LineNum: l.lineNumber}
+				return token.Token{Type: token.ILLEGAL, Literal: "ILLEGAL", LineNum: temp_line_number}
 			}
 
 			// if r != ' ' && r != '\n' && r != '\t' {
@@ -153,25 +158,29 @@ func (l *Scanner) NextToken() token.Token {
 			if !l.whitespaces.MatchString(string(r)) {
 				l.reader.UnreadRune()
 			} else if r == '\n' || r == '\r' { // newline
+				r_next, _, _ := l.reader.ReadRune()
+				if r_next != '\n' {
+					l.reader.UnreadRune()
+				}
 				l.lineNumber++
 			}
 
 			temp_lexeme := l.lexeme
 			l.lexeme = ""
 			if l.number_compiled.MatchString(temp_lexeme) {
-				return token.Token{Type: token.NUM, Literal: temp_lexeme, LineNum: l.lineNumber}
+				return token.Token{Type: token.NUM, Literal: temp_lexeme, LineNum: temp_line_number}
 			}
 			if l.id_compiled.MatchString(temp_lexeme) {
 				if tok, exist := l.keywords[temp_lexeme]; exist {
-					return token.Token{Type: tok, Literal: temp_lexeme, LineNum: l.lineNumber}
+					return token.Token{Type: tok, Literal: temp_lexeme, LineNum: temp_line_number}
 				}
-				return token.Token{Type: token.ID, Literal: temp_lexeme, LineNum: l.lineNumber}
+				return token.Token{Type: token.ID, Literal: temp_lexeme, LineNum: temp_line_number}
 			}
 			if tok, exist := l.symbols[temp_lexeme]; exist {
 				if tok == token.COMMENT {
 					l.isComment = true
 				}
-				return token.Token{Type: tok, Literal: temp_lexeme, LineNum: l.lineNumber}
+				return token.Token{Type: tok, Literal: temp_lexeme, LineNum: temp_line_number}
 			}
 		}
 	}
