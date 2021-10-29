@@ -21,6 +21,8 @@ type Scanner struct {
 
 	keywords map[string]token.TokenType
 	symbols  map[string]token.TokenType
+
+	isComment bool
 }
 
 func New(input_reader *bufio.Reader) *Scanner {
@@ -28,6 +30,7 @@ func New(input_reader *bufio.Reader) *Scanner {
 	scanner.number_compiled, _ = regexp.Compile("^[0-9]+$")
 	scanner.id_compiled, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9]*$")
 	scanner.whitespaces, _ = regexp.Compile("\\s+")
+	scanner.isComment = false
 
 	keywords_map := map[string]token.TokenType{
 		"int":    token.INT,
@@ -80,6 +83,7 @@ func New(input_reader *bufio.Reader) *Scanner {
 		">=": token.GE,
 		"<":  token.LT,
 		"<=": token.LE,
+		"//": token.COMMENT,
 	}
 
 	scanner.keywords = keywords_map
@@ -122,6 +126,12 @@ func (l *Scanner) NextToken() token.Token {
 				log.Fatal(err)
 			}
 		} else {
+			if l.isComment {
+				if r == '\n' || r == '\r' { // newline
+					l.isComment = false
+				}
+				continue
+			}
 			curr_lexeme := l.lexeme + string(r)
 			_, exist := l.symbols[curr_lexeme]
 			if l.number_compiled.MatchString(curr_lexeme) || l.id_compiled.MatchString(curr_lexeme) || exist {
@@ -153,6 +163,9 @@ func (l *Scanner) NextToken() token.Token {
 				return token.Token{Type: token.ID, Literal: temp_lexeme}
 			}
 			if tok, exist := l.symbols[temp_lexeme]; exist {
+				if tok == token.COMMENT {
+					l.isComment = true
+				}
 				return token.Token{Type: tok, Literal: temp_lexeme}
 			}
 		}

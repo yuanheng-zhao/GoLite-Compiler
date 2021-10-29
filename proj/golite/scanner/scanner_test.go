@@ -96,6 +96,7 @@ func Test1(t *testing.T) {
 		{token.PACK, "package"},
 		{token.ID, "test1"},
 		{token.SEMICOLON, ";"},
+		{token.COMMENT, "//"},
 		{token.IMPORT, "import"},
 		{token.QTDMARK, "\""},
 		{token.FMT, "fmt"},

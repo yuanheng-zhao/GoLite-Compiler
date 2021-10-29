@@ -53,6 +53,7 @@ const (
 	GE        = ">="
 	LT        = "<"
 	LE        = "<="
+	COMMENT   = "//"
 )
 
 type Token struct {
