@@ -28,10 +28,11 @@ func main() {
 		}
 		reader := bufio.NewReader(f_obj)
 		my_scanner := scanner.New(reader)
-		var tok token.TokenType
-		for tok != token.EOF {
-			tok = my_scanner.NextToken().Type
-			fmt.Println(tok)
+		var tok token.Token
+
+		for tok.Type != token.EOF {
+			tok = my_scanner.NextToken()
+			fmt.Println(tok.Type, "(", tok.LineNum, ")")
 		}
 	}
 
