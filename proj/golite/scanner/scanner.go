@@ -51,6 +51,8 @@ func New(input_reader *bufio.Reader) *Scanner {
 		"if":      token.IF,
 		"else":    token.ELSE,
 		"for":     token.FOR,
+		"func":    token.FUNC,
+		"var":     token.VAR,
 	}
 
 	symbols_map := map[string]token.TokenType{

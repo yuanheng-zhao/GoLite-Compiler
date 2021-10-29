@@ -26,6 +26,8 @@ const (
 	IF      = "if"
 	ELSE    = "else"
 	FOR     = "for"
+	FUNC    = "func"
+	VAR     = "var"
 
 	DOT     = "."
 	COMMA   = ","
