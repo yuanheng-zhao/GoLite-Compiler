@@ -22,7 +22,8 @@ type Scanner struct {
 	keywords map[string]token.TokenType
 	symbols  map[string]token.TokenType
 
-	isComment bool
+	isComment  bool
+	lineNumber int
 }
 
 func New(input_reader *bufio.Reader) *Scanner {
@@ -31,6 +32,7 @@ func New(input_reader *bufio.Reader) *Scanner {
 	scanner.id_compiled, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9]*$")
 	scanner.whitespaces, _ = regexp.Compile("\\s+")
 	scanner.isComment = false
+	scanner.lineNumber = 1
 
 	keywords_map := map[string]token.TokenType{
 		"int":    token.INT,
@@ -151,27 +153,27 @@ func (l *Scanner) NextToken() token.Token {
 			if err == io.EOF {
 				// return 'eof' if we have not processed any chars as current literal (lexeme)
 				if len(l.lexeme) == 0 {
-					return token.Token{Type: token.EOF, Literal: "eof"}
+					return token.Token{Type: token.EOF, Literal: "eof", LineNum: l.lineNumber}
 				}
 				if l.number_compiled.MatchString(l.lexeme) {
 					temp_lexeme := l.lexeme
 					l.lexeme = ""
-					return token.Token{Type: token.NUM, Literal: temp_lexeme}
+					return token.Token{Type: token.NUM, Literal: temp_lexeme, LineNum: l.lineNumber}
 				}
 				if tok, exist := l.symbols[l.lexeme]; exist {
 					temp_lexeme := l.lexeme
 					l.lexeme = ""
-					return token.Token{Type: tok, Literal: temp_lexeme}
+					return token.Token{Type: tok, Literal: temp_lexeme, LineNum: l.lineNumber}
 				}
 				if l.id_compiled.MatchString(l.lexeme) {
 					temp_lexeme := l.lexeme
 					// check if it matches with some keywords (e.g. print, var)
 					if tok, exist := l.keywords[l.lexeme]; exist {
 						l.lexeme = ""
-						return token.Token{Type: tok, Literal: temp_lexeme}
+						return token.Token{Type: tok, Literal: temp_lexeme, LineNum: l.lineNumber}
 					}
 					l.lexeme = ""
-					return token.Token{Type: token.ID, Literal: temp_lexeme}
+					return token.Token{Type: token.ID, Literal: temp_lexeme, LineNum: l.lineNumber}
 				}
 
 			} else {
@@ -179,9 +181,15 @@ func (l *Scanner) NextToken() token.Token {
 				log.Fatal(err)
 			}
 		} else {
+			temp_line_number := l.lineNumber
 			if l.isComment {
 				if r == '\n' || r == '\r' { // newline
 					l.isComment = false
+					r_next, _, _ := l.reader.ReadRune()
+					if r_next != '\n' {
+						l.reader.UnreadRune()
+					}
+					l.lineNumber++
 				}
 				continue
 			}
@@ -193,7 +201,7 @@ func (l *Scanner) NextToken() token.Token {
 			}
 
 			if len(l.lexeme) == 0 && !l.whitespaces.MatchString(string(r)) {
-				return token.Token{Type: token.ILLEGAL, Literal: "ILLEGAL"}
+				return token.Token{Type: token.ILLEGAL, Literal: "ILLEGAL", LineNum: temp_line_number}
 			}
 
 			// if r != ' ' && r != '\n' && r != '\t' {
@@ -202,24 +210,30 @@ func (l *Scanner) NextToken() token.Token {
 			// rollback if not a whitespace/newline/carriage return/etc
 			if !l.whitespaces.MatchString(string(r)) {
 				l.reader.UnreadRune()
+			} else if r == '\n' || r == '\r' { // newline
+				r_next, _, _ := l.reader.ReadRune()
+				if r_next != '\n' {
+					l.reader.UnreadRune()
+				}
+				l.lineNumber++
 			}
 
 			temp_lexeme := l.lexeme
 			l.lexeme = ""
 			if l.number_compiled.MatchString(temp_lexeme) {
-				return token.Token{Type: token.NUM, Literal: temp_lexeme}
+				return token.Token{Type: token.NUM, Literal: temp_lexeme, LineNum: temp_line_number}
 			}
 			if l.id_compiled.MatchString(temp_lexeme) {
 				if tok, exist := l.keywords[temp_lexeme]; exist {
-					return token.Token{Type: tok, Literal: temp_lexeme}
+					return token.Token{Type: tok, Literal: temp_lexeme, LineNum: temp_line_number}
 				}
-				return token.Token{Type: token.ID, Literal: temp_lexeme}
+				return token.Token{Type: token.ID, Literal: temp_lexeme, LineNum: temp_line_number}
 			}
 			if tok, exist := l.symbols[temp_lexeme]; exist {
 				if tok == token.COMMENT {
 					l.isComment = true
 				}
-				return token.Token{Type: tok, Literal: temp_lexeme}
+				return token.Token{Type: tok, Literal: temp_lexeme, LineNum: temp_line_number}
 			}
 		}
 	}

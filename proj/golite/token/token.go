@@ -63,7 +63,6 @@ const (
 type Token struct {
 	Type    TokenType
 	Literal string
-	//type_lookup string
 }
 
 func (tok Token) String() string {
