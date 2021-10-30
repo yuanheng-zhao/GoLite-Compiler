@@ -63,8 +63,9 @@ const (
 type Token struct {
 	Type    TokenType
 	Literal string
+	LineNum int
 }
 
 func (tok Token) String() string {
-	return fmt.Sprintf("Token.%v(%v)", tok.Type, tok.Literal)
+	return fmt.Sprintf("Token.%v(%v)", tok.Type, tok.LineNum)
 }

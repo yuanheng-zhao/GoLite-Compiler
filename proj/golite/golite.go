@@ -36,8 +36,8 @@ func main() {
 		// }
 
 		var tok token.Token
-		eof_token := token.Token{Type: token.EOF, Literal: "eof"}
-		for tok != eof_token {
+		// eof_token := token.Token{Type: token.EOF, Literal: "EOF"}
+		for tok.Type != token.EOF {
 			tok = my_scanner.NextToken()
 			fmt.Println(tok)
 		}
