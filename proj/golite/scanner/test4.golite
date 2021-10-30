@@ -1,0 +1,13 @@
+package main
+func getNum() *set.IntSet {
+	var res set.IntSet
+	return &res
+}
+
+func main() {
+	var setA set.IntSet
+
+	setA = *getNum()
+
+    return
+}
