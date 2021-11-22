@@ -15,26 +15,20 @@ type Node interface {
 // Expr All expression nodes implement this interface
 type Expr interface {
 	Node
-	GetType()  // TO-DO
+	GetType() // TO-DO
 }
 
 // Stmt All statement nodes implement this interface
 type Stmt interface {
 	Node
-	PerformSABuild()  // TO-DO
+	PerformSABuild() // TO-DO
 }
-
-
-
-
-
-
-
 
 type Arguments struct {
-	Token      *token.Token
-	Exprs      []Expression // MARKING
+	Token *token.Token
+	Exprs []Expression // MARKING
 }
+
 func (args *Arguments) TokenLiteral() string {
 	if args.Token != nil {
 		return args.Token.Literal
@@ -57,12 +51,12 @@ func (args *Arguments) String() string {
 }
 func (args *Arguments) GetType() {}
 
-
 type LValue struct {
 	Token  *token.Token
 	Ident  IdentLiteral
 	Idents []IdentLiteral
 }
+
 func (lv *LValue) TokenLiteral() string {
 	if lv.Token != nil {
 		return lv.Token.Literal
@@ -80,12 +74,12 @@ func (lv *LValue) String() string {
 }
 func (lv *LValue) GetType() {}
 
-
 type Expression struct {
-	Token *token.Token
-	Left  *BoolTerm
+	Token  *token.Token
+	Left   *BoolTerm
 	Rights []BoolTerm
 }
+
 func (exp *Expression) TokenLiteral() string {
 	if exp.Token != nil {
 		return exp.Token.Literal
@@ -103,12 +97,12 @@ func (exp *Expression) String() string {
 }
 func (exp *Expression) GetType() {}
 
-
 type BoolTerm struct {
-	Token *token.Token
-	Left  *EqualTerm
+	Token  *token.Token
+	Left   *EqualTerm
 	Rights []EqualTerm
 }
+
 func (bt *BoolTerm) TokenLiteral() string {
 	if bt.Token != nil {
 		return bt.Token.Literal
@@ -126,13 +120,13 @@ func (bt *BoolTerm) String() string {
 }
 func (bt *BoolTerm) GetType() {}
 
-
 type EqualTerm struct {
-	Token *token.Token
-	Left  *RelationTerm
+	Token         *token.Token
+	Left          *RelationTerm
 	EqualOperator []string // '=='|'!='
 	Rights        []RelationTerm
 }
+
 func (et *EqualTerm) TokenLiteral() string {
 	if et.Token != nil {
 		return et.Token.Literal
@@ -151,13 +145,13 @@ func (et *EqualTerm) String() string {
 }
 func (et *EqualTerm) GetType() {}
 
-
 type RelationTerm struct {
-	Token *token.Token
-	Left  *SimpleTerm
+	Token             *token.Token
+	Left              *SimpleTerm
 	RelationOperators []string // '>'| '<' | '<=' | '>='
 	Rights            []SimpleTerm
 }
+
 func (rt *RelationTerm) TokenLiteral() string {
 	if rt.Token != nil {
 		return rt.Token.Literal
@@ -176,13 +170,13 @@ func (rt *RelationTerm) String() string {
 }
 func (rt *RelationTerm) GetType() {}
 
-
 type SimpleTerm struct {
-	Token *token.Token
-	Left  *Term
+	Token               *token.Token
+	Left                *Term
 	SimpleTermOperators []string // '+' | '-'
 	Rights              []Term
 }
+
 func (st *SimpleTerm) TokenLiteral() string {
 	if st.Token != nil {
 		return st.Token.Literal
@@ -201,13 +195,13 @@ func (st *SimpleTerm) String() string {
 }
 func (st *SimpleTerm) GetType() {}
 
-
 type Term struct {
-	Token *token.Token
-	Left  *UnaryTerm
+	Token         *token.Token
+	Left          *UnaryTerm
 	TermOperators []string // '*' | '/'
 	Rights        []UnaryTerm
 }
+
 func (t *Term) TokenLiteral() string {
 	if t.Token != nil {
 		return t.Token.Literal
@@ -226,12 +220,12 @@ func (t *Term) String() string {
 }
 func (t *Term) GetType() {}
 
-
 type UnaryTerm struct {
 	Token         *token.Token
 	UnaryOperator string // '!' | '-' | '' <- default
 	SelectorTerm  *SelectorTerm
 }
+
 func (ut *UnaryTerm) TokenLiteral() string {
 	if ut.Token != nil {
 		return ut.Token.Literal
@@ -246,12 +240,12 @@ func (ut *UnaryTerm) String() string {
 }
 func (ut *UnaryTerm) GetType() {}
 
-
 type SelectorTerm struct {
 	Token  *token.Token
 	Fact   *Factor
 	Idents []IdentLiteral
 }
+
 func (st *SelectorTerm) TokenLiteral() string {
 	if st.Token != nil {
 		return st.Token.Literal
@@ -269,12 +263,11 @@ func (st *SelectorTerm) String() string {
 }
 func (st *SelectorTerm) GetType() {}
 
-
-
 type Factor struct {
 	Token *token.Token
-	Expr Expr
+	Expr  Node
 }
+
 func (f *Factor) TokenLiteral() string {
 	if f.Token != nil {
 		return f.Token.Literal
@@ -283,16 +276,12 @@ func (f *Factor) TokenLiteral() string {
 }
 func (f *Factor) String() string {
 	out := bytes.Buffer{}
-	out.WriteString(f.Expr.String())  // TO-DO
+	out.WriteString(f.Expr.String()) // TO-DO
 	return out.String()
 }
-func(f *Factor)	GetType() {}
+func (f *Factor) GetType() {}
 
-
-
-
-
-func NewArgs(exprs []Expression) *Arguments { return &Arguments{nil, exprs} }
+func NewArgs(exprs []Expression) *Arguments                       { return &Arguments{nil, exprs} }
 func NewLvalue(ident IdentLiteral, idents []IdentLiteral) *LValue { return &LValue{nil, ident, idents} }
 func NewExpression(l *BoolTerm, rs []BoolTerm) *Expression {
 	return &Expression{nil, l, rs}
@@ -313,18 +302,20 @@ func NewTerm(l *UnaryTerm, operators []string, rs []UnaryTerm) *Term {
 func NewUnaryTerm(operator string, selectorTerm *SelectorTerm) *UnaryTerm {
 	return &UnaryTerm{nil, operator, selectorTerm}
 }
-func NewSelectorTerm(factor *Factor, idents []IdentLiteral) *SelectorTerm { return &SelectorTerm{nil, factor, idents} }
-func NewFactor(expr *Expr) *Factor { return &Factor{nil, *expr} }
-
+func NewSelectorTerm(factor *Factor, idents []IdentLiteral) *SelectorTerm {
+	return &SelectorTerm{nil, factor, idents}
+}
+func NewFactor(expr Node) *Factor { return &Factor{nil, expr} }
 
 /******* Single Literals Expr *******/
 
 // InvocExpr : invocation in Factor ('id' [Arguments])
 type InvocExpr struct {
-	Token *token.Token
-	Ident IdentLiteral
+	Token     *token.Token
+	Ident     IdentLiteral
 	InnerArgs *Arguments
 }
+
 func (ie *InvocExpr) TokenLiteral() string {
 	if ie.Token != nil {
 		return ie.Token.Literal
@@ -339,12 +330,12 @@ func (ie *InvocExpr) String() string {
 }
 func (ie *InvocExpr) GetType() {}
 
-
 // PriorityExpression : '(' Expression ')' (inside Factor)
 type PriorityExpression struct {
-	Token *token.Token
+	Token           *token.Token
 	InnerExpression *Expression
 }
+
 func (pe *PriorityExpression) TokenLiteral() string {
 	if pe.Token != nil {
 		return pe.Token.Literal
@@ -360,40 +351,41 @@ func (pe *PriorityExpression) String() string {
 }
 func (pe *PriorityExpression) GetType() {}
 
-
 // NilNode : nil (keyword "nil")
 type NilNode struct {
 	Token *token.Token
 }
+
 func (n *NilNode) TokenLiteral() string { return n.Token.Literal }
 func (n *NilNode) String() string       { return n.Token.Literal }
-func (n *NilNode) GetType() {}
-
+func (n *NilNode) GetType()             {}
 
 // BoolLiteral : True/False
 type BoolLiteral struct {
 	Token *token.Token
 	Value bool
 }
+
 func (bl *BoolLiteral) TokenLiteral() string { return bl.Token.Literal }
 func (bl *BoolLiteral) String() string       { return bl.Token.Literal }
-func (bl *BoolLiteral) GetType() {}
+func (bl *BoolLiteral) GetType()             {}
 
 // IntLiteral : number (integer)
 type IntLiteral struct {
 	Token *token.Token
 	Value int64
 }
+
 func (il *IntLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntLiteral) String() string       { return il.Token.Literal }
-func (il *IntLiteral) GetType() {}
+func (il *IntLiteral) GetType()             {}
 
 // IdentLiteral : identifier
 type IdentLiteral struct {
 	Token *token.Token
 	Id    string
 }
+
 func (idl *IdentLiteral) TokenLiteral() string { return idl.Token.Literal }
 func (idl *IdentLiteral) String() string       { return idl.Token.Literal }
-func (idl *IdentLiteral) GetType() {}
-
+func (idl *IdentLiteral) GetType()             {}
