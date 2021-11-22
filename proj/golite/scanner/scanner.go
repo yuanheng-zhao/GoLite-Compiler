@@ -194,6 +194,10 @@ func (l *Scanner) NextToken() token.Token {
 				continue
 			}
 			curr_lexeme := l.lexeme + string(r)
+			if curr_lexeme == "|" { // for the special case "||"
+				l.lexeme = curr_lexeme
+				continue
+			}
 			_, exist := l.symbols[curr_lexeme]
 			if l.number_compiled.MatchString(curr_lexeme) || l.id_compiled.MatchString(curr_lexeme) || exist {
 				l.lexeme = curr_lexeme

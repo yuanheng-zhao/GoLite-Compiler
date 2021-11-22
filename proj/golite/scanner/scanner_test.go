@@ -256,3 +256,24 @@ func Test4(t *testing.T) {
 
 	VerifyTest(t, expected, scanner)
 }
+
+func Test5(t *testing.T) {
+
+	f_obj, _ := os.Open("../parser/test1_parser.golite")
+	reader := bufio.NewReader(f_obj)
+	myScanner := New(reader)
+	// The expected result struct represents the token stream for the input source
+	expected := []ExpectedResult{
+		{token.LPAREN, "("},
+		{token.ID, "a"},
+		{token.OR, "||"},
+		{token.ID, "b"},
+		{token.AND, "&&"},
+		{token.ID, "c"},
+		{token.EQUAL, "=="},
+		{token.TRUE, "true"},
+		{token.RPAREN, ")"},
+	}
+
+	VerifyTest(t, expected, myScanner)
+}
