@@ -39,7 +39,7 @@ func Test1(t *testing.T) {
 
 func Test2(t *testing.T) {
 
-	f_obj, _ := os.Open("test1_parser.golite")
+	f_obj, _ := os.Open("test2_parser.golite")
 	reader := bufio.NewReader(f_obj)
 	myScanner := scanner.New(reader)
 	// The expected result struct represents the token stream for the input source
@@ -64,7 +64,7 @@ func Test2(t *testing.T) {
 
 func Test3(t *testing.T) {
 
-	f_obj, _ := os.Open("test2_parser.golite")
+	f_obj, _ := os.Open("test3_parser.golite")
 	reader := bufio.NewReader(f_obj)
 	myScanner := scanner.New(reader)
 	// The expected result struct represents the token stream for the input source
@@ -93,5 +93,5 @@ func Test3(t *testing.T) {
 		t.Errorf("\nParse(%v)\nExpected:%v\nGot:%v", tokens, "Valid AST", nil)
 	}
 
-	fmt.Println("AST Printout:\n", ast.String())
+	//fmt.Println("AST Printout:\n", ast.String())
 }

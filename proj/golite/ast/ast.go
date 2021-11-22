@@ -265,7 +265,7 @@ func (st *SelectorTerm) GetType() {}
 
 type Factor struct {
 	Token *token.Token
-	Expr  Node
+	Expr  Expr
 }
 
 func (f *Factor) TokenLiteral() string {
@@ -305,7 +305,7 @@ func NewUnaryTerm(operator string, selectorTerm *SelectorTerm) *UnaryTerm {
 func NewSelectorTerm(factor *Factor, idents []IdentLiteral) *SelectorTerm {
 	return &SelectorTerm{nil, factor, idents}
 }
-func NewFactor(expr Node) *Factor { return &Factor{nil, expr} }
+func NewFactor(expr *Expr) *Factor { return &Factor{nil, *expr} }
 
 /******* Single Literals Expr *******/
 

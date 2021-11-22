@@ -352,7 +352,7 @@ func factor(p *Parser) *ast.Factor {
 	// to do: verify the value of declared node
 	if node != nil {
 		//return &node
-		return ast.NewFactor(node)
+		return ast.NewFactor(&node)
 	} else {
 		return nil
 	}
