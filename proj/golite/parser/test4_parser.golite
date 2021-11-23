@@ -1,5 +1,0 @@
-package main;
-import "fmt";
-func main (a int) {
-    a = 1 + 1;
-}

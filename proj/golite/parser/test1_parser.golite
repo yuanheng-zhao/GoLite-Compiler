@@ -1,1 +1,6 @@
-(a || b&&c==true)
+package main;
+import "fmt";
+func main () {
+    var a int;
+    a = 1 + 1;
+}
