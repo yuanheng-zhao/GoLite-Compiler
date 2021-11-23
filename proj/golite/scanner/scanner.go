@@ -26,7 +26,6 @@ type Scanner struct {
 	lineNumber int
 
 	// for Statement in rdp
-	rollbackFlag   bool
 	rollbackOffset int
 }
 
@@ -95,7 +94,6 @@ func New(inputReader *bufio.Reader) *Scanner {
 	scanner.keywords = keywordsMap
 	scanner.symbols = symbolsMap
 
-	scanner.rollbackFlag = false
 	scanner.rollbackOffset = 0
 
 	return scanner
@@ -142,6 +140,7 @@ func (l *Scanner) NextToken() token.Token {
 				if r == '\n' || r == '\r' { // newline
 					l.isComment = false
 					rNext, _, _ := l.reader.ReadRune()
+					l.rollbackOffset += 1
 					if rNext != '\n' {
 						l.reader.UnreadRune()
 						l.rollbackOffset -= 1
@@ -174,6 +173,7 @@ func (l *Scanner) NextToken() token.Token {
 				l.rollbackOffset -= 1
 			} else if r == '\n' || r == '\r' { // newline
 				rNext, _, _ := l.reader.ReadRune()
+				l.rollbackOffset += 1
 				if rNext != '\n' {
 					l.reader.UnreadRune()
 					l.rollbackOffset -= 1
