@@ -24,9 +24,6 @@ type Scanner struct {
 
 	isComment  bool
 	lineNumber int
-
-	// for Statement in rdp
-	rollbackOffset int
 }
 
 func New(inputReader *bufio.Reader) *Scanner {
@@ -94,15 +91,12 @@ func New(inputReader *bufio.Reader) *Scanner {
 	scanner.keywords = keywordsMap
 	scanner.symbols = symbolsMap
 
-	scanner.rollbackOffset = 0
-
 	return scanner
 }
 
 func (l *Scanner) NextToken() token.Token {
 	for {
 		r, _, err := l.reader.ReadRune()
-		l.rollbackOffset += 1
 		if err != nil {
 			if err == io.EOF {
 				// return 'eof' if we have not processed any chars as current literal (lexeme)
@@ -140,10 +134,8 @@ func (l *Scanner) NextToken() token.Token {
 				if r == '\n' || r == '\r' { // newline
 					l.isComment = false
 					rNext, _, _ := l.reader.ReadRune()
-					l.rollbackOffset += 1
 					if rNext != '\n' {
 						l.reader.UnreadRune()
-						l.rollbackOffset -= 1
 					}
 					l.lineNumber++
 				}
@@ -170,13 +162,10 @@ func (l *Scanner) NextToken() token.Token {
 			// rollback if not a whitespace/newline/carriage return/etc
 			if !l.whitespaces.MatchString(string(r)) {
 				l.reader.UnreadRune()
-				l.rollbackOffset -= 1
 			} else if r == '\n' || r == '\r' { // newline
 				rNext, _, _ := l.reader.ReadRune()
-				l.rollbackOffset += 1
 				if rNext != '\n' {
 					l.reader.UnreadRune()
-					l.rollbackOffset -= 1
 				}
 				l.lineNumber++
 			}
@@ -199,20 +188,5 @@ func (l *Scanner) NextToken() token.Token {
 				return token.Token{Type: tok, Literal: tempLexeme, LineNum: tempLineNum}
 			}
 		}
-	}
-}
-
-func (l *Scanner) RollbackReset() {
-	l.rollbackOffset = 0
-}
-
-func (l *Scanner) Rollback() {
-	if l.rollbackOffset < 1 {
-		// have to reset first
-		return
-	}
-	for l.rollbackOffset > 0 {
-		l.reader.UnreadRune()
-		l.rollbackOffset -= 1
 	}
 }

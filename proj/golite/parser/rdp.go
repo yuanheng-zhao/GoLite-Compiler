@@ -11,17 +11,36 @@ import (
 
 //Parser includes all fields necessary to perform recursive decent parsing
 type Parser struct {
-	scanner   scanner.Scanner
+	tokens    []ct.Token
 	currToken ct.Token
+	currIndex int
 	errFound  bool
 }
 
 //New creates and initializes a new parser
 func New(scanner scanner.Scanner) *Parser {
 	parser := &Parser{}
-	parser.scanner = scanner
-	parser.currToken = scanner.NextToken()
+	parser.tokens = []ct.Token{}
+	// read all tokens from given scanner
+	for {
+		tok := scanner.NextToken()
+		if tok.Type == ct.EOF {
+			parser.tokens = append(parser.tokens, tok)
+			break
+		}
+		parser.tokens = append(parser.tokens, tok)
+	}
+	parser.currIndex = 0
+	parser.currToken = parser.tokens[parser.currIndex]
 	return parser
+}
+
+func (p *Parser) NextToken() ct.Token {
+	p.currIndex += 1
+	if p.currIndex >= len(p.tokens) {
+		return ct.Token{ct.ILLEGAL, "illegal", -1}
+	}
+	return p.tokens[p.currIndex]
 }
 
 func (p *Parser) parseError(msg string) {
@@ -34,7 +53,7 @@ func (p *Parser) match(token ct.TokenType) (ct.Token, bool) {
 	lineNum := p.currToken.LineNum
 	if token == p.currToken.Type {
 		token := p.currToken
-		p.currToken = p.scanner.NextToken()
+		p.currToken = p.NextToken()
 		return token, true
 	}
 	return ct.Token{ct.ILLEGAL, "", lineNum}, false
@@ -417,49 +436,56 @@ func statements(p *Parser) *ast.Statements {
 
 func statement(p *Parser) *ast.Statement {
 	// to do, adapt with backtracking
-	p.scanner.RollbackReset()
+	rollbackIdx := p.currIndex
 	bloc := block(p)
 	if bloc != nil {
 		return ast.NewStatement(bloc)
 	}
+	p.currIndex = rollbackIdx - 1
+	p.currToken = p.NextToken()
 
-	p.scanner.Rollback()
 	assi := assignment(p)
 	if assi != nil {
 		return ast.NewStatement(assi)
 	}
+	p.currIndex = rollbackIdx - 1
+	p.currToken = p.NextToken()
 
-	p.scanner.Rollback()
 	prin := print(p)
 	if prin != nil {
 		return ast.NewStatement(prin)
 	}
+	p.currIndex = rollbackIdx - 1
+	p.currToken = p.NextToken()
 
-	p.scanner.Rollback()
 	cond := conditional(p)
 	if cond != nil {
 		return ast.NewStatement(cond)
 	}
+	p.currIndex = rollbackIdx - 1
+	p.currToken = p.NextToken()
 
-	p.scanner.Rollback()
 	loopAst := loop(p)
 	if loopAst != nil {
 		return ast.NewStatement(loopAst)
 	}
+	p.currIndex = rollbackIdx - 1
+	p.currToken = p.NextToken()
 
-	p.scanner.Rollback()
 	ret := returnStmt(p)
 	if ret != nil {
 		return ast.NewStatement(ret)
 	}
+	p.currIndex = rollbackIdx - 1
+	p.currToken = p.NextToken()
 
-	p.scanner.Rollback()
 	readAst := read(p)
 	if readAst != nil {
 		return ast.NewStatement(readAst)
 	}
+	p.currIndex = rollbackIdx - 1
+	p.currToken = p.NextToken()
 
-	p.scanner.Rollback()
 	invoc := invocation(p)
 	if invoc != nil {
 		return ast.NewStatement(invoc)

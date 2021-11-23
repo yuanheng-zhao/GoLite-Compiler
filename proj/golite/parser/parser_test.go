@@ -47,6 +47,7 @@ func Test1(t *testing.T) {
 	}
 
 	parser := New(*myScanner)
+	fmt.Println(parser.tokens)
 	ast := parser.Parse()
 	if ast == nil {
 		t.Errorf("\nParse(%v)\nExpected:%v\nGot:%v", tokens, "Valid AST", nil)
