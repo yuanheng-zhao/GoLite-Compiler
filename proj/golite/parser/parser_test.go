@@ -95,3 +95,38 @@ func Test3(t *testing.T) {
 
 	//fmt.Println("AST Printout:\n", ast.String())
 }
+
+func Test4(t *testing.T) {
+
+	f_obj, _ := os.Open("test4_parser.golite")
+	reader := bufio.NewReader(f_obj)
+	myScanner := scanner.New(reader)
+	// The expected result struct represents the token stream for the input source
+	tokens := []ct.Token{
+		{ct.PACK, "package", 1},
+		{ct.ID, "main", 1},
+		{ct.SEMICOLON, ";", 1},
+
+		{ct.IMPORT, "import", 2},
+		{ct.QTDMARK, "\"", 2},
+		{ct.FMT, "fmt", 2},
+		{ct.QTDMARK, "\"", 2},
+		{ct.SEMICOLON, ";", 2},
+
+		{ct.ID, "a", 3},
+		{ct.ASSIGN, "=", 3},
+		{ct.INT, "1", 3},
+		{ct.ADD, "+", 3},
+		{ct.INT, "1", 3},
+		{ct.SEMICOLON, ";", 3},
+	}
+
+	// Define  a new scanner for some Cal program
+	parser := New(*myScanner)
+	ast := parser.Parse()
+	if ast == nil {
+		t.Errorf("\nParse(%v)\nExpected:%v\nGot:%v", tokens, "Valid AST", nil)
+	}
+
+	//fmt.Println("AST Printout:\n", ast.String())
+}
