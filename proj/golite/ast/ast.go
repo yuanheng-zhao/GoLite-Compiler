@@ -638,8 +638,8 @@ func NewPrint(printMethod string, ident IdentLiteral) *Print {
 func NewConditional(expr *Expression, block *Block, elseBlock *Block) *Conditional {
 	return &Conditional{nil, expr, block, elseBlock}
 }
-func NewLoop(expr *Expression, block *Block) *Loop        { return &Loop{nil, expr, block} }
-func NewReturn(exprExists bool, expr *Expression) *Return { return &Return{nil, expr} }
+func NewLoop(expr *Expression, block *Block) *Loop { return &Loop{nil, expr, block} }
+func NewReturn(expr *Expression) *Return           { return &Return{nil, expr} }
 func NewInvocation(ident IdentLiteral, args *Arguments) *Invocation {
 	return &Invocation{nil, ident, args}
 }
