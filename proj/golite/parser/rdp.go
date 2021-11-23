@@ -416,37 +416,50 @@ func statements(p *Parser) *ast.Statements {
 }
 
 func statement(p *Parser) *ast.Statement {
-
 	// to do, adapt with backtracking
-
+	p.scanner.RollbackReset()
 	bloc := block(p)
 	if bloc != nil {
 		return ast.NewStatement(bloc)
 	}
+
+	p.scanner.Rollback()
 	assi := assignment(p)
 	if assi != nil {
 		return ast.NewStatement(assi)
 	}
+
+	p.scanner.Rollback()
 	prin := print(p)
 	if prin != nil {
 		return ast.NewStatement(prin)
 	}
+
+	p.scanner.Rollback()
 	cond := conditional(p)
 	if cond != nil {
 		return ast.NewStatement(cond)
 	}
+
+	p.scanner.Rollback()
 	loopAst := loop(p)
 	if loopAst != nil {
 		return ast.NewStatement(loopAst)
 	}
+
+	p.scanner.Rollback()
 	ret := returnStmt(p)
 	if ret != nil {
 		return ast.NewStatement(ret)
 	}
+
+	p.scanner.Rollback()
 	readAst := read(p)
 	if readAst != nil {
 		return ast.NewStatement(readAst)
 	}
+
+	p.scanner.Rollback()
 	invoc := invocation(p)
 	if invoc != nil {
 		return ast.NewStatement(invoc)
