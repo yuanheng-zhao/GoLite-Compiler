@@ -2,63 +2,10 @@ package scanner
 
 import (
 	"bufio"
-	"proj/golite/token"
-
-	// "io"
 	"os"
+	"proj/golite/token"
 	"testing"
 )
-
-// func Test1(t *testing.T) {
-// 	// s1 := "This is a test string"
-
-// 	f_obj, _ := os.Open("test.golite")
-// 	var r *bufio.Reader
-// 	r = bufio.NewReader(f_obj)
-// 	c, _, _ := r.ReadRune()
-// 	c, _, _ = r.ReadRune()
-// 	c, _, _ = r.ReadRune()
-// 	r.UnreadRune()
-
-// 	c, _, _ = r.ReadRune()
-// 	d := string(c)
-// 	fmt.Println(d)
-// }
-
-// func Test2(t *testing.T) {
-// 	f_obj, _ := os.Open("test.golite")
-// 	var r *bufio.Reader
-// 	r = bufio.NewReader(f_obj)
-// 	s := New(r)
-// 	x, _, err := s.reader.ReadRune()
-// 	if err != nil && err == io.EOF {
-// 		fmt.Println("EOF FOUND!")
-// 		fmt.Println(err)
-// 	} else {
-// 		fmt.Println(x)
-// 	}
-
-// 	x, _, err = s.reader.ReadRune()
-// 	if err != nil && err == io.EOF {
-// 		fmt.Println("EOF FOUND!")
-// 		fmt.Println(err)
-// 	} else {
-// 		fmt.Println(x)
-// 	}
-// }
-
-// func Test3(t *testing.T) {
-// 	test_map := make(map[string]int)
-// 	test_map["\""] = 999
-// 	f_obj, _ := os.Open("test.golite")
-// 	var r *bufio.Reader
-// 	r = bufio.NewReader(f_obj)
-// 	c, _, _ := r.ReadRune()
-// 	d := string(c)
-
-// 	fmt.Println(test_map[d])
-
-// }
 
 type ExpectedResult struct {
 	expectedType    token.TokenType
@@ -85,8 +32,8 @@ func VerifyTest(t *testing.T, tests []ExpectedResult, scanner *Scanner) {
 func Test1(t *testing.T) {
 	// s1 := "This is a test string"
 
-	f_obj, _ := os.Open("test1.golite")
-	reader := bufio.NewReader(f_obj)
+	fileObj, _ := os.Open("test1.golite")
+	reader := bufio.NewReader(fileObj)
 	scanner := New(reader)
 
 	// 	package test1;
@@ -114,8 +61,8 @@ func Test1(t *testing.T) {
 func Test2(t *testing.T) {
 	// s1 := "This is a test string"
 
-	f_obj, _ := os.Open("test2.golite")
-	reader := bufio.NewReader(f_obj)
+	fileObj, _ := os.Open("test2.golite")
+	reader := bufio.NewReader(fileObj)
 	scanner := New(reader)
 
 	// 	package test1;
@@ -163,8 +110,8 @@ func Test2(t *testing.T) {
 func Test3(t *testing.T) {
 	// s1 := "This is a test string"
 
-	f_obj, _ := os.Open("test3.golite")
-	reader := bufio.NewReader(f_obj)
+	fileObj, _ := os.Open("test3.golite")
+	reader := bufio.NewReader(fileObj)
 	scanner := New(reader)
 
 	// 	package test1;
@@ -209,8 +156,8 @@ func Test3(t *testing.T) {
 func Test4(t *testing.T) {
 	// s1 := "This is a test string"
 
-	f_obj, _ := os.Open("test4.golite")
-	reader := bufio.NewReader(f_obj)
+	fileObj, _ := os.Open("test4.golite")
+	reader := bufio.NewReader(fileObj)
 	scanner := New(reader)
 
 	expected := []ExpectedResult{
@@ -259,8 +206,8 @@ func Test4(t *testing.T) {
 
 func Test5(t *testing.T) {
 
-	f_obj, _ := os.Open("../parser/test1_parser.golite")
-	reader := bufio.NewReader(f_obj)
+	fileObj, _ := os.Open("../parser/test1_parser.golite")
+	reader := bufio.NewReader(fileObj)
 	myScanner := New(reader)
 	// The expected result struct represents the token stream for the input source
 	expected := []ExpectedResult{
@@ -276,4 +223,32 @@ func Test5(t *testing.T) {
 	}
 
 	VerifyTest(t, expected, myScanner)
+}
+
+func TestRollback1(t *testing.T) {
+
+	fileObj, _ := os.Open("../parser/test1_parser.golite")
+	reader := bufio.NewReader(fileObj)
+	myScanner := New(reader)
+	// The expected result struct represents the token stream for the input source
+	expected := []ExpectedResult{
+		{token.LPAREN, "("},
+		{token.ID, "a"},
+		{token.OR, "||"},
+		{token.ID, "b"},
+		{token.AND, "&&"},
+		{token.ID, "c"},
+		{token.EQUAL, "=="},
+		{token.TRUE, "true"},
+		{token.RPAREN, ")"},
+	}
+
+	VerifyTest(t, expected, myScanner)
+	if myScanner.rollbackOffset != 18 {
+		t.Errorf("\nScan file (%v)\nExpected:%v\nGot:%v", fileObj.Name(), 18, myScanner.rollbackOffset)
+	}
+	myScanner.RollbackReset()
+	if myScanner.rollbackOffset != 0 {
+		t.Errorf("\nScan file (%v)\nReset RollbackOffset\nExpected:%v\nGot:%v", fileObj.Name(), 0, myScanner.rollbackOffset)
+	}
 }
