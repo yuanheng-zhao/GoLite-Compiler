@@ -99,6 +99,7 @@ func (imp *Import) String() string {
 	out.WriteString("fmt") // imp.Ident.String() equivalent
 	out.WriteString("\"")
 	out.WriteString(";")
+	out.WriteString("\n")
 	return out.String()
 }
 func (imp *Import) PerformSABuild() {}
@@ -282,7 +283,6 @@ func (fs *Functions) String() string {
 	out := bytes.Buffer{}
 	for _, fun := range fs.Functions {
 		out.WriteString(fun.String())
-		out.WriteString("\n")
 	}
 	return out.String()
 }
@@ -318,6 +318,7 @@ func (f *Function) String() string {
 	out.WriteString(" ")
 	out.WriteString(f.Statements.String())
 	out.WriteString("}")
+	out.WriteString("\n")
 	return out.String()
 }
 func (f *Function) PerformSABuild() {}
@@ -378,16 +379,14 @@ func (stmts *Statements) TokenLiteral() string {
 }
 func (stmts *Statements) String() string {
 	out := bytes.Buffer{}
-	out.WriteString("{")
 	if len(stmts.Statements) > 0 {
 		out.WriteString("\n")
 	}
 	for _, stmt := range stmts.Statements {
 		out.WriteString("\t")
 		out.WriteString(stmt.String())
-		out.WriteString("\n")
 	}
-	out.WriteString("}\n")
+	out.WriteString("\n")
 	return out.String()
 }
 func (stmts *Statements) PerformSABuild() {}
