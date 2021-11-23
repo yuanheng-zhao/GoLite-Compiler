@@ -314,6 +314,7 @@ func (f *Function) String() string {
 	out.WriteString(" ")
 	out.WriteString(f.ReturnType.String())
 	out.WriteString("{")
+	out.WriteString("\n")
 	out.WriteString(f.Declarations.String())
 	out.WriteString(" ")
 	out.WriteString(f.Statements.String())
@@ -337,8 +338,11 @@ func (params *Parameters) TokenLiteral() string {
 func (params *Parameters) String() string {
 	out := bytes.Buffer{}
 	out.WriteString("(")
-	out.WriteString(params.Decls[0].String())
-	remaining := params.Decls[1:]
+	var remaining []Decl
+	if len(params.Decls) > 0 {
+		out.WriteString(params.Decls[0].String())
+		remaining = params.Decls[1:]
+	}
 	for _, decl := range remaining {
 		out.WriteString(",")
 		out.WriteString(decl.String())
@@ -379,9 +383,6 @@ func (stmts *Statements) TokenLiteral() string {
 }
 func (stmts *Statements) String() string {
 	out := bytes.Buffer{}
-	if len(stmts.Statements) > 0 {
-		out.WriteString("\n")
-	}
 	for _, stmt := range stmts.Statements {
 		out.WriteString("\t")
 		out.WriteString(stmt.String())

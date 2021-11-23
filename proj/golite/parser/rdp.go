@@ -327,7 +327,7 @@ func function(p *Parser) *ast.Function {
 	if funcTok, funcMatch = p.match(ct.FUNC); !funcMatch {
 		return nil
 	}
-	if idTok, idMatch = p.match(ct.ID); idMatch {
+	if idTok, idMatch = p.match(ct.ID); !idMatch {
 		return nil
 	}
 	paras := parameters(p)
