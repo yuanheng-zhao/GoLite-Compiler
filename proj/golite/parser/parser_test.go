@@ -113,12 +113,22 @@ func Test4(t *testing.T) {
 		{ct.QTDMARK, "\"", 2},
 		{ct.SEMICOLON, ";", 2},
 
+		{ct.FUNC, "func", 3},
+		{ct.ID, "main", 3},
+		{ct.LPAREN, "(", 3},
 		{ct.ID, "a", 3},
-		{ct.ASSIGN, "=", 3},
-		{ct.INT, "1", 3},
-		{ct.ADD, "+", 3},
-		{ct.INT, "1", 3},
-		{ct.SEMICOLON, ";", 3},
+		{ct.INT, "int", 3},
+		{ct.RPAREN, ")", 3},
+		{ct.LBRACE, "{", 3},
+
+		{ct.ID, "a", 4},
+		{ct.ASSIGN, "=", 4},
+		{ct.NUM, "1", 4},
+		{ct.ADD, "+", 4},
+		{ct.NUM, "1", 4},
+		{ct.SEMICOLON, ";", 4},
+
+		{ct.RBRACE, "}", 4},
 	}
 
 	// Define  a new scanner for some Cal program
