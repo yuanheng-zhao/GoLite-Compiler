@@ -424,6 +424,7 @@ func (b *Block) TokenLiteral() string {
 func (b *Block) String() string {
 	out := bytes.Buffer{}
 	out.WriteString("{")
+	out.WriteString("\n")
 	out.WriteString(b.Statements.String())
 	out.WriteString("}")
 	return out.String()
@@ -450,6 +451,7 @@ func (a *Assignment) String() string {
 	out.WriteString(" ")
 	out.WriteString(a.Expr.String())
 	out.WriteString(";")
+	out.WriteString("\n")
 	return out.String()
 }
 func (a *Assignment) PerformSABuild() {}
