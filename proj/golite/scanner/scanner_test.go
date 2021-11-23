@@ -29,6 +29,34 @@ func VerifyTest(t *testing.T, tests []ExpectedResult, scanner *Scanner) {
 	}
 }
 
+type ExpectedResultFull struct {
+	expectedType    token.TokenType
+	expectedLiteral string
+	expectedLineNum int
+}
+
+func VerifyTestFull(t *testing.T, tests []ExpectedResultFull, scanner *Scanner) {
+
+	for i, tt := range tests {
+		tok := scanner.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("FAILED[%d] - incorrect token.\nexpected=%v\ngot=%v\n",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("FAILED[%d] - incorrect token literal.\nexpected=%v\ngot=%v\n",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+
+		if tok.LineNum != tt.expectedLineNum {
+			t.Fatalf("FAILED[%d] - incorrect token lineNum.\nexpected=%v\ngot=%v\n",
+				i, tt.expectedLineNum, tok.LineNum)
+		}
+	}
+}
+
 func Test1(t *testing.T) {
 	// s1 := "This is a test string"
 
@@ -55,7 +83,29 @@ func Test1(t *testing.T) {
 		{token.SEMICOLON, ";"},
 	}
 
+	expectedFull := []ExpectedResultFull{
+		{token.PACK, "package", 1},
+		{token.ID, "test1", 1},
+		{token.SEMICOLON, ";", 1},
+		{token.COMMENT, "//", 1},
+		{token.IMPORT, "import", 3},
+		{token.QTDMARK, "\"", 3},
+		{token.FMT, "fmt", 3},
+		{token.QTDMARK, "\"", 3},
+		{token.SEMICOLON, ";", 3},
+		{token.ID, "a", 4},
+		{token.ASSIGN, "=", 4},
+		{token.NUM, "3", 4},
+		{token.SEMICOLON, ";", 4},
+	}
+
 	VerifyTest(t, expected, scanner)
+
+	// test with line number
+	fileObj, _ = os.Open("test1.golite")
+	reader = bufio.NewReader(fileObj)
+	scanner = New(reader)
+	VerifyTestFull(t, expectedFull, scanner)
 }
 
 func Test2(t *testing.T) {
