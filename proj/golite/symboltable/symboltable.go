@@ -27,6 +27,8 @@ func (st *SymbolTable) Insert(tokLiteral string, entry *Entry) {
 }
 
 type Entry interface {
+	SetType(t types.Type)
+	SetValue(s string)
 	GetEntryType() types.Type
 	GetScopeST() *SymbolTable
 }
@@ -42,14 +44,14 @@ func NewVarEntry() *VarEntry {
 func (ve *VarEntry) GetEntryType() types.Type {
 	return ve.ty
 }
+func (ve *VarEntry) GetScopeST() *SymbolTable {
+	return nil // dummy one, for consistency of Entry interface
+}
 func (ve *VarEntry) SetType(t types.Type) {
 	ve.ty = t
 }
 func (ve *VarEntry) SetValue(s string) {
 	ve.value = s
-}
-func (ve *VarEntry) GetScopeST() *SymbolTable {
-	return nil // dummy one, for consistency of Entry interface
 }
 
 type FuncEntry struct {
@@ -67,6 +69,8 @@ func (fe *FuncEntry) GetEntryType() types.Type {
 func (fe *FuncEntry) GetScopeST() *SymbolTable {
 	return fe.scopeSt
 }
+func (fe *FuncEntry) SetType(t types.Type) {}
+func (fe *FuncEntry) SetValue(s string)    {}
 
 type StructEntry struct {
 	ty      types.Type
@@ -82,3 +86,5 @@ func (se *StructEntry) GetEntryType() types.Type {
 func (se *StructEntry) GetScopeST() *SymbolTable {
 	return se.scopeSt
 }
+func (se *StructEntry) SetType(t types.Type) {}
+func (se *StructEntry) SetValue(s string)    {}
