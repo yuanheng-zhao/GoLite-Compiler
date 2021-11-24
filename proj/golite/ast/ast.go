@@ -2,6 +2,8 @@ package ast
 
 import (
 	"bytes"
+	"fmt"
+	st "proj/golite/symboltable"
 	"proj/golite/token"
 )
 
@@ -15,20 +17,20 @@ type Node interface {
 // Expr All expression nodes implement this interface
 type Expr interface {
 	Node
-	GetType() // TO-DO
+	//GetType() // TO-DO
 }
 
 // Stmt All statement nodes implement this interface
 type Stmt interface {
 	Node
-	PerformSABuild() // TO-DO
+	PerformSABuild([]string, *st.SymbolTable) []string // TO-DO
 }
 
 /******* Stmt : Statement *******/
 
 type Program struct {
 	Token *token.Token
-	//st    *st.SymbolTable
+	st    *st.SymbolTable
 
 	Package      *Package
 	Import       *Import
@@ -37,9 +39,6 @@ type Program struct {
 	Functions    *Functions
 }
 
-func NewProgram(pac *Package, imp *Import, typ *Types, decs *Declarations, funs *Functions) *Program {
-	return &Program{nil, pac, imp, typ, decs, funs}
-}
 func (p *Program) TokenLiteral() string {
 	if p.Token != nil {
 		return p.Token.Literal
@@ -55,7 +54,15 @@ func (p *Program) String() string {
 	out.WriteString(p.Functions.String())
 	return out.String()
 }
-func (p *Program) PerformSABuild() {}
+func (p *Program) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	p.st = symTable
+	errors = p.Package.PerformSABuild(errors, symTable)
+	errors = p.Import.PerformSABuild(errors, symTable)
+	errors = p.Types.PerformSABuild(errors, symTable)
+	errors = p.Declarations.PerformSABuild(errors, symTable)
+	errors = p.Functions.PerformSABuild(errors, symTable)
+	return errors
+}
 
 type Package struct {
 	Token *token.Token
@@ -78,7 +85,9 @@ func (pkg *Package) String() string {
 	out.WriteString("\n")
 	return out.String()
 }
-func (pkg *Package) PerformSABuild() {}
+func (pkg *Package) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 type Import struct {
 	Token *token.Token
@@ -102,7 +111,9 @@ func (imp *Import) String() string {
 	out.WriteString("\n")
 	return out.String()
 }
-func (imp *Import) PerformSABuild() {}
+func (imp *Import) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 type Types struct {
 	Token *token.Token
@@ -124,11 +135,16 @@ func (tys *Types) String() string {
 	}
 	return out.String()
 }
-func (tys *Types) PerformSABuild() {}
+func (tys *Types) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	for _, typedec := range tys.TypeDeclarations {
+		errors = typedec.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
 
 type TypeDeclaration struct {
 	Token *token.Token
-	//st     *st.SymbolTable
+	st     *st.SymbolTable
 	Ident  IdentLiteral
 	Fields *Fields
 }
@@ -153,7 +169,21 @@ func (td *TypeDeclaration) String() string {
 	out.WriteString("\n")
 	return out.String()
 }
-func (td *TypeDeclaration) PerformSABuild() {}
+func (td *TypeDeclaration) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	structName := td.Ident.TokenLiteral()
+	scopeSymTable := st.New(symTable, structName, nil)
+	td.st = scopeSymTable
+
+	if entry := symTable.Contains(structName); entry != nil {
+		errors = append(errors, fmt.Sprintf("#{td.Token.LineNum}: struct #{structName} already declared"))
+	} else {
+		var entry st.Entry
+		entry = st.NewStructEntry()
+		symTable.Insert(structName, &entry)
+		errors = td.Fields.PerformSABuild(errors, td.st)
+	}
+	return errors
+}
 
 type Fields struct {
 	Token *token.Token
@@ -177,7 +207,12 @@ func (fields *Fields) String() string {
 	}
 	return out.String()
 }
-func (fields *Fields) PerformSABuild() {}
+func (fields *Fields) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	for _, decl := range fields.Decls {
+		errors = decl.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
 
 type Decl struct {
 	Token *token.Token
@@ -198,7 +233,17 @@ func (decl *Decl) String() string {
 	out.WriteString(decl.Ty.String())
 	return out.String()
 }
-func (decl *Decl) PerformSABuild() {}
+func (decl *Decl) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	varName := decl.Ident.TokenLiteral()
+	if entry := symTable.Contains(varName); entry != nil {
+		errors = append(errors, fmt.Sprintf("#{decl.Token.LineNum}: variable #{varName} already declared"))
+	} else {
+		var entry st.Entry
+		entry = st.NewVarEntry()
+		symTable.Insert(varName, &entry)
+	}
+	return errors
+}
 
 type Declarations struct {
 	Token        *token.Token
@@ -219,7 +264,12 @@ func (ds *Declarations) String() string {
 	}
 	return out.String()
 }
-func (ds *Declarations) PerformSABuild() {}
+func (ds *Declarations) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	for _, dec := range ds.Declarations {
+		errors = dec.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
 
 type Declaration struct {
 	Token *token.Token
@@ -243,7 +293,10 @@ func (d *Declaration) String() string {
 	out.WriteString(";")
 	return out.String()
 }
-func (d *Declaration) PerformSABuild() {}
+func (d *Declaration) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	errors = d.Ids.PerformSABuild(errors, symTable)
+	return errors
+}
 
 type Ids struct {
 	Token  *token.Token
@@ -266,7 +319,19 @@ func (ids *Ids) String() string {
 	}
 	return out.String()
 }
-func (ids *Ids) PerformSABuild() {}
+func (ids *Ids) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	for _, id := range ids.Idents {
+		varName := id.TokenLiteral()
+		if entry := symTable.Contains(varName); entry != nil {
+			errors = append(errors, fmt.Sprintf("#{id.Token.LineNum}: variable #{varName} already declared"))
+		} else {
+			var entry st.Entry
+			entry = st.NewVarEntry()
+			symTable.Insert(varName, &entry)
+		}
+	}
+	return errors
+}
 
 type Functions struct {
 	Token     *token.Token
@@ -286,11 +351,16 @@ func (fs *Functions) String() string {
 	}
 	return out.String()
 }
-func (fs *Functions) PerformSABuild() {}
+func (fs *Functions) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	for _, fun := range fs.Functions {
+		errors = fun.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
 
 type Function struct {
 	Token *token.Token
-	//st           *st.SymbolTable
+	st           *st.SymbolTable
 	Ident        IdentLiteral
 	Parameters   *Parameters
 	ReturnType   *ReturnType
@@ -322,7 +392,22 @@ func (f *Function) String() string {
 	out.WriteString("\n")
 	return out.String()
 }
-func (f *Function) PerformSABuild() {}
+func (f *Function) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	funcName := f.Ident.TokenLiteral()
+	scopeSymTable := st.New(symTable, funcName, nil)
+	f.st = scopeSymTable
+	if entry := symTable.Contains(funcName); entry != nil {
+		errors = append(errors, fmt.Sprintf("#{f.Token.LineNum}: function #{funcName} has been declared"))
+	} else {
+		var entry st.Entry
+		entry = st.NewFuncEntry()
+		symTable.Insert(funcName, &entry)
+		errors = f.Parameters.PerformSABuild(errors, symTable)
+		errors = f.Declarations.PerformSABuild(errors, symTable)
+		errors = f.Statements.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
 
 type Parameters struct {
 	Token *token.Token
@@ -350,7 +435,12 @@ func (params *Parameters) String() string {
 	out.WriteString(")")
 	return out.String()
 }
-func (params *Parameters) PerformSABuild() {}
+func (params *Parameters) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	for _, decl := range params.Decls {
+		errors = decl.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
 
 type ReturnType struct {
 	Token *token.Token
@@ -390,7 +480,12 @@ func (stmts *Statements) String() string {
 	out.WriteString("\n")
 	return out.String()
 }
-func (stmts *Statements) PerformSABuild() {}
+func (stmts *Statements) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	for _, stmt := range stmts.Statements {
+		errors = stmt.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
 
 type Statement struct {
 	Token *token.Token
@@ -408,7 +503,10 @@ func (s *Statement) String() string {
 	out.WriteString(s.Stmt.String())
 	return out.String()
 }
-func (s *Statement) PerformSABuild() {}
+func (s *Statement) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	errors = s.Stmt.PerformSABuild(errors, symTable)
+	return errors
+}
 
 type Block struct {
 	Token      *token.Token
@@ -429,7 +527,10 @@ func (b *Block) String() string {
 	out.WriteString("}")
 	return out.String()
 }
-func (b *Block) PerformSABuild() {}
+func (b *Block) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	errors = b.Statements.PerformSABuild(errors, symTable)
+	return errors
+}
 
 type Assignment struct {
 	Token  *token.Token
@@ -454,7 +555,9 @@ func (a *Assignment) String() string {
 	out.WriteString("\n")
 	return out.String()
 }
-func (a *Assignment) PerformSABuild() {}
+func (a *Assignment) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 type Read struct {
 	Token *token.Token
@@ -479,7 +582,9 @@ func (r *Read) String() string {
 	out.WriteString(";")
 	return out.String()
 }
-func (r *Read) PerformSABuild() {}
+func (r *Read) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 type Print struct {
 	Token       *token.Token
@@ -504,7 +609,9 @@ func (p *Print) String() string {
 	out.WriteString(";")
 	return out.String()
 }
-func (p *Print) PerformSABuild() {}
+func (p *Print) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 type Conditional struct {
 	Token     *token.Token
@@ -534,7 +641,11 @@ func (cond *Conditional) String() string {
 	}
 	return out.String()
 }
-func (cond *Conditional) PerformSABuild() {}
+func (cond *Conditional) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	errors = cond.Block.PerformSABuild(errors, symTable)
+	errors = cond.ElseBlock.PerformSABuild(errors, symTable)
+	return errors
+}
 
 type Loop struct {
 	Token *token.Token
@@ -559,7 +670,10 @@ func (lp *Loop) String() string {
 	out.WriteString(lp.Block.String())
 	return out.String()
 }
-func (lp *Loop) PerformSABuild() {}
+func (lp *Loop) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	errors = lp.Block.PerformSABuild(errors, symTable)
+	return errors
+}
 
 type Return struct {
 	Token *token.Token // "RETURN"
@@ -582,7 +696,9 @@ func (ret *Return) String() string {
 	out.WriteString(";")
 	return out.String()
 }
-func (ret *Return) PerformSABuild() {}
+func (ret *Return) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 // Invocation Statement, compared with InvocExpr
 type Invocation struct {
@@ -605,15 +721,20 @@ func (invoc *Invocation) String() string {
 	out.WriteString(";")
 	return out.String()
 }
-func (invoc *Invocation) PerformSABuild() {}
+func (invoc *Invocation) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
+func NewProgram(pac *Package, imp *Import, typ *Types, decs *Declarations, funs *Functions) *Program {
+	return &Program{nil, nil, pac, imp, typ, decs, funs}
+}
 func NewPackage(ident IdentLiteral) *Package {
 	return &Package{nil, ident}
 }
 func NewImport(ident IdentLiteral) *Import      { return &Import{nil, ident} }
 func NewTypes(typdecs []TypeDeclaration) *Types { return &Types{nil, typdecs} }
 func NewTypeDeclaration(ident IdentLiteral, fields *Fields) *TypeDeclaration {
-	return &TypeDeclaration{nil, ident, fields}
+	return &TypeDeclaration{nil, nil,ident, fields}
 }
 func NewFields(decls []Decl) *Fields                   { return &Fields{nil, decls} }
 func NewDecl(ident IdentLiteral, ty *Type) *Decl       { return &Decl{nil, ident, ty} }
@@ -623,7 +744,7 @@ func NewIds(idents []IdentLiteral) *Ids                { return &Ids{nil, idents
 func NewFunctions(funs []Function) *Functions          { return &Functions{nil, funs} }
 func NewFunction(ident IdentLiteral, params *Parameters, returnType *ReturnType,
 	declarations *Declarations, statements *Statements) *Function {
-	return &Function{nil, ident, params, returnType, declarations, statements}
+	return &Function{nil, nil, ident, params, returnType, declarations, statements}
 }
 func NewParameters(decls []Decl) *Parameters      { return &Parameters{nil, decls} }
 func NewReturnType(str string) *ReturnType        { return &ReturnType{nil, NewType(str)} }
