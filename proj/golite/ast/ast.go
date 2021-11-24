@@ -5,6 +5,7 @@ import (
 	"fmt"
 	st "proj/golite/symboltable"
 	"proj/golite/token"
+	"proj/golite/types"
 )
 
 // Node The base Node interface that all ast nodes have to access
@@ -17,7 +18,7 @@ type Node interface {
 // Expr All expression nodes implement this interface
 type Expr interface {
 	Node
-	//GetType() // TO-DO
+	GetType(*st.SymbolTable) types.Type // TO-DO
 }
 
 // Stmt All statement nodes implement this interface
@@ -402,9 +403,9 @@ func (f *Function) PerformSABuild(errors []string, symTable *st.SymbolTable) []s
 		var entry st.Entry
 		entry = st.NewFuncEntry()
 		symTable.Insert(funcName, &entry)
-		errors = f.Parameters.PerformSABuild(errors, symTable)
-		errors = f.Declarations.PerformSABuild(errors, symTable)
-		errors = f.Statements.PerformSABuild(errors, symTable)
+		errors = f.Parameters.PerformSABuild(errors, f.st)
+		errors = f.Declarations.PerformSABuild(errors, f.st)
+		errors = f.Statements.PerformSABuild(errors, f.st)
 	}
 	return errors
 }
@@ -441,24 +442,6 @@ func (params *Parameters) PerformSABuild(errors []string, symTable *st.SymbolTab
 	}
 	return errors
 }
-
-type ReturnType struct {
-	Token *token.Token
-	Ty    *Type
-}
-
-func (rt *ReturnType) TokenLiteral() string {
-	if rt.Token != nil {
-		return rt.Token.Literal
-	}
-	panic("Could not determine token literals for returnType")
-}
-func (rt *ReturnType) String() string {
-	out := bytes.Buffer{}
-	out.WriteString(rt.Ty.String())
-	return out.String()
-}
-func (rt *ReturnType) PerformSABuild() {}
 
 type Statements struct {
 	Token      *token.Token
@@ -784,7 +767,40 @@ func (t *Type) TokenLiteral() string {
 func (t *Type) String() string {
 	return t.TypeLiteral
 }
-func (t *Type) GetType() {}
+func (t *Type) GetType(symTable *st.SymbolTable) types.Type {
+	if t.TypeLiteral == "int" {
+		return types.IntTySig
+	} else if t.TypeLiteral == "bool" {
+		return types.BoolTySig
+	} else {
+		return types.StructTySig
+	}
+}
+
+type ReturnType struct {
+	Token *token.Token
+	Ty    *Type
+}
+
+func (rt *ReturnType) TokenLiteral() string {
+	if rt.Token != nil {
+		return rt.Token.Literal
+	}
+	panic("Could not determine token literals for returnType")
+}
+func (rt *ReturnType) String() string {
+	out := bytes.Buffer{}
+	out.WriteString(rt.Ty.String())
+	return out.String()
+}
+
+func (rt *ReturnType) GetType(symTable *st.SymbolTable) types.Type {
+	if rt.Ty.TokenLiteral() == "" {
+		return types.VoidTySig
+	} else {
+		return rt.Ty.GetType(symTable)
+	}
+}
 
 type Arguments struct {
 	Token *token.Token
@@ -811,7 +827,9 @@ func (args *Arguments) String() string {
 	out.WriteString(")")
 	return out.String()
 }
-func (args *Arguments) GetType() {}
+func (args *Arguments) GetType(symTable *st.SymbolTable) types.Type {
+	return types.VoidTySig
+}
 
 type LValue struct {
 	Token  *token.Token
@@ -834,7 +852,35 @@ func (lv *LValue) String() string {
 	}
 	return out.String()
 }
-func (lv *LValue) GetType() {}
+func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
+	var entry st.Entry
+	varName := lv.Ident.TokenLiteral()
+	for {
+		if entry = symTable.Contains(varName); entry == nil {
+			if symTable.Parent == nil {
+				return types.UnknownTySig
+			} else {
+				symTable = symTable.Parent
+			}
+		} else {
+			break
+		}
+	}
+	// here entry is the entry of the first id in Idents
+	symTable = entry.GetScopeST()
+	remaining := lv.Idents[1:]
+	for idx, id := range remaining {
+		if entry = symTable.Contains(id.String()); entry == nil {
+			return types.UnknownTySig
+		} else {
+			if idx == len(lv.Idents) - 1 {
+				break
+			}
+			symTable = entry.GetScopeST()
+		}
+	}
+	return entry.GetEntryType()
+}
 
 type Expression struct {
 	Token  *token.Token
@@ -857,7 +903,17 @@ func (exp *Expression) String() string {
 	}
 	return out.String()
 }
-func (exp *Expression) GetType() {}
+func (exp *Expression) GetType(symTable *st.SymbolTable) types.Type {
+	leftType := exp.Left.GetType(symTable)
+
+	for _, rTerm := range exp.Rights {
+		rightType := rTerm.GetType(symTable)
+		if (leftType != rightType) {
+			return types.UnknownTySig
+		}
+	}
+	return leftType
+}
 
 type BoolTerm struct {
 	Token  *token.Token
@@ -880,7 +936,17 @@ func (bt *BoolTerm) String() string {
 	}
 	return out.String()
 }
-func (bt *BoolTerm) GetType() {}
+func (bt *BoolTerm) GetType(symTable *st.SymbolTable) types.Type {
+	leftType := bt.Left.GetType(symTable)
+
+	for _, rTerm := range bt.Rights {
+		rightType := rTerm.GetType(symTable)
+		if leftType != rightType {
+			return types.UnknownTySig
+		}
+	}
+	return leftType
+}
 
 type EqualTerm struct {
 	Token         *token.Token
@@ -905,7 +971,17 @@ func (et *EqualTerm) String() string {
 	}
 	return out.String()
 }
-func (et *EqualTerm) GetType() {}
+func (et *EqualTerm) GetType(symTable *st.SymbolTable) types.Type {
+	leftType := et.Left.GetType(symTable)
+
+	for _, rTerm := range et.Rights {
+		rightType := rTerm.GetType(symTable)
+		if leftType != rightType {
+			return types.UnknownTySig
+		}
+	}
+	return leftType
+}
 
 type RelationTerm struct {
 	Token             *token.Token
@@ -930,7 +1006,17 @@ func (rt *RelationTerm) String() string {
 	}
 	return out.String()
 }
-func (rt *RelationTerm) GetType() {}
+func (rt *RelationTerm) GetType(symTable *st.SymbolTable) types.Type {
+	leftType := rt.Left.GetType(symTable)
+
+	for _, rTerm := range rt.Rights {
+		rightType := rTerm.GetType(symTable)
+		if leftType != rightType {
+			return types.UnknownTySig
+		}
+	}
+	return leftType
+}
 
 type SimpleTerm struct {
 	Token               *token.Token
@@ -955,7 +1041,17 @@ func (st *SimpleTerm) String() string {
 	}
 	return out.String()
 }
-func (st *SimpleTerm) GetType() {}
+func (st *SimpleTerm) GetType(symTable *st.SymbolTable) types.Type {
+	leftType := st.Left.GetType(symTable)
+
+	for _, rTerm := range st.Rights {
+		rightType := rTerm.GetType(symTable)
+		if leftType != rightType {
+			return types.UnknownTySig
+		}
+	}
+	return leftType
+}
 
 type Term struct {
 	Token         *token.Token
@@ -980,7 +1076,17 @@ func (t *Term) String() string {
 	}
 	return out.String()
 }
-func (t *Term) GetType() {}
+func (t *Term) GetType(symTable *st.SymbolTable) types.Type {
+	leftType := t.Left.GetType(symTable)
+
+	for _, rTerm := range t.Rights {
+		rightType := rTerm.GetType(symTable)
+		if leftType != rightType {
+			return types.UnknownTySig
+		}
+	}
+	return leftType
+}
 
 type UnaryTerm struct {
 	Token         *token.Token
@@ -1000,7 +1106,23 @@ func (ut *UnaryTerm) String() string {
 	out.WriteString(ut.SelectorTerm.String())
 	return out.String()
 }
-func (ut *UnaryTerm) GetType() {}
+func (ut *UnaryTerm) GetType(symTable *st.SymbolTable) types.Type {
+	if ut.UnaryOperator == "!" {
+		if ut.SelectorTerm.GetType(symTable) == types.BoolTySig {
+			return types.BoolTySig
+		} else {
+			return types.UnknownTySig
+		}
+	} else if ut.UnaryOperator == "-" {
+		if ut.SelectorTerm.GetType(symTable) == types.IntTySig {
+			return types.IntTySig
+		} else {
+			return types.UnknownTySig
+		}
+	} else {
+		return ut.SelectorTerm.GetType(symTable)
+	}
+}
 
 type SelectorTerm struct {
 	Token  *token.Token
@@ -1008,22 +1130,56 @@ type SelectorTerm struct {
 	Idents []IdentLiteral
 }
 
-func (st *SelectorTerm) TokenLiteral() string {
-	if st.Token != nil {
-		return st.Token.Literal
+func (selt *SelectorTerm) TokenLiteral() string {
+	if selt.Token != nil {
+		return selt.Token.Literal
 	}
 	panic("Could not determine token literals for selectorTerm")
 }
-func (st *SelectorTerm) String() string {
+func (selt *SelectorTerm) String() string {
 	out := bytes.Buffer{}
-	out.WriteString(st.Fact.String())
-	for _, id := range st.Idents {
+	out.WriteString(selt.Fact.String())
+	for _, id := range selt.Idents {
 		out.WriteString(".")
 		out.WriteString(id.String())
 	}
 	return out.String()
 }
-func (st *SelectorTerm) GetType() {}
+func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type{
+	facType := selt.Fact.GetType(symTable)
+	if len(selt.Idents) == 0 {
+		return facType
+	} else if facType == types.StructTySig {
+		var entry st.Entry
+		varName := selt.Fact.String()
+		for {
+			if entry = symTable.Contains(varName); entry == nil {
+				if symTable.Parent == nil {
+					return types.UnknownTySig
+				} else {
+					symTable = symTable.Parent
+				}
+			} else {
+				break
+			}
+		}
+		// here entry is the entry of the first id in Idents
+		symTable = entry.GetScopeST()
+		remaining := selt.Idents[1:]
+		for idx, id := range remaining {
+			if entry = symTable.Contains(id.String()); entry == nil {
+				return types.UnknownTySig
+			} else {
+				if idx == len(selt.Idents) - 1 {
+					break
+				}
+				symTable = entry.GetScopeST()
+			}
+		}
+		return entry.GetEntryType()
+	}
+	return types.UnknownTySig
+}
 
 type Factor struct {
 	Token *token.Token
@@ -1041,7 +1197,9 @@ func (f *Factor) String() string {
 	out.WriteString(f.Expr.String()) // TO-DO
 	return out.String()
 }
-func (f *Factor) GetType() {}
+func (f *Factor) GetType(symTable *st.SymbolTable) types.Type {
+	return f.Expr.GetType(symTable)
+}
 
 func NewType(typeLit string) *Type                                { return &Type{nil, typeLit} }
 func NewArgs(exprs []Expression) *Arguments                       { return &Arguments{nil, exprs} }
@@ -1089,7 +1247,7 @@ func (ie *InvocExpr) String() string {
 	out.WriteString(ie.InnerArgs.String())
 	return out.String()
 }
-func (ie *InvocExpr) GetType() {}
+func (ie *InvocExpr) GetType(symTable *st.SymbolTable) types.Type { return types.FuncTySig }
 
 // PriorityExpression : '(' Expression ')' (inside Factor)
 type PriorityExpression struct {
@@ -1110,7 +1268,9 @@ func (pe *PriorityExpression) String() string {
 	out.WriteString(")")
 	return out.String()
 }
-func (pe *PriorityExpression) GetType() {}
+func (pe *PriorityExpression) GetType(symTable *st.SymbolTable) types.Type {
+	return pe.InnerExpression.GetType(symTable)
+}
 
 // NilNode : nil (keyword "nil")
 type NilNode struct {
@@ -1119,7 +1279,7 @@ type NilNode struct {
 
 func (n *NilNode) TokenLiteral() string { return n.Token.Literal }
 func (n *NilNode) String() string       { return n.Token.Literal }
-func (n *NilNode) GetType()             {}
+func (n *NilNode) GetType(symTable *st.SymbolTable) types.Type  { return types.VoidTySig }
 
 // BoolLiteral : True/False
 type BoolLiteral struct {
@@ -1129,7 +1289,7 @@ type BoolLiteral struct {
 
 func (bl *BoolLiteral) TokenLiteral() string { return bl.Token.Literal }
 func (bl *BoolLiteral) String() string       { return bl.Token.Literal }
-func (bl *BoolLiteral) GetType()             {}
+func (bl *BoolLiteral) GetType(symTable *st.SymbolTable) types.Type  { return types.BoolTySig }
 
 // IntLiteral : number (integer)
 type IntLiteral struct {
@@ -1139,7 +1299,7 @@ type IntLiteral struct {
 
 func (il *IntLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntLiteral) String() string       { return il.Token.Literal }
-func (il *IntLiteral) GetType()             {}
+func (il *IntLiteral) GetType(symTable *st.SymbolTable) types.Type  { return types.IntTySig }
 
 // IdentLiteral : identifier
 type IdentLiteral struct {
@@ -1149,4 +1309,18 @@ type IdentLiteral struct {
 
 func (idl *IdentLiteral) TokenLiteral() string { return idl.Token.Literal }
 func (idl *IdentLiteral) String() string       { return idl.Token.Literal }
-func (idl *IdentLiteral) GetType()             {}
+func (idl *IdentLiteral) GetType(symTable *st.SymbolTable) types.Type {
+	var entry st.Entry
+	for {
+		if entry = symTable.Contains(idl.TokenLiteral()); entry == nil {
+			if symTable.Parent == nil {
+				return types.UnknownTySig
+			} else {
+				symTable = symTable.Parent
+			}
+		} else {
+			break
+		}
+	}
+	return entry.GetEntryType()
+}

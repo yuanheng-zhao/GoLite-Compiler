@@ -978,9 +978,9 @@ func factor(p *Parser) *ast.Factor {
 		val, _ := strconv.ParseInt(numTok.Literal, 10, 64)
 		node = &ast.IntLiteral{Token: &numTok, Value: val}
 	} else if truTok, match := p.match(ct.TRUE); match {
-		node = &ast.IdentLiteral{Token: &truTok, Id: truTok.Literal}
+		node = &ast.BoolLiteral{Token: &truTok, Value: true }
 	} else if flsTok, match := p.match(ct.FALSE); match {
-		node = &ast.IdentLiteral{Token: &flsTok, Id: flsTok.Literal}
+		node = &ast.BoolLiteral{Token: &flsTok, Value: false }
 	} else if nilTok, match := p.match(ct.NIL); match {
 		node = &ast.NilNode{Token: &nilTok}
 	} else if identTok, match := p.match(ct.ID); match {

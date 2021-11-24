@@ -30,11 +30,13 @@ func (st *SymbolTable) Insert(tokLiteral string, entry *Entry) {
 
 
 type Entry interface {
-
+	GetEntryType() types.Type
+	GetScopeST() *SymbolTable
 }
 
 type VarEntry struct {
-
+	Entry
+	T types.Type
 }
 
 func NewVarEntry() *VarEntry {
@@ -42,7 +44,8 @@ func NewVarEntry() *VarEntry {
 }
 
 type FuncEntry struct {
-
+	Entry
+	T types.Type
 }
 
 func NewFuncEntry() *FuncEntry {
@@ -50,7 +53,8 @@ func NewFuncEntry() *FuncEntry {
 }
 
 type StructEntry struct {
-
+	Entry
+	T types.Type
 }
 
 func NewStructEntry() *StructEntry {
