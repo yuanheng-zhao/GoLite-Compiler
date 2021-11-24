@@ -3,14 +3,15 @@ package symboltable
 import "proj/golite/types"
 
 type SymbolTable struct {
-	Parent        *SymbolTable
-	htable        map[string]*Entry
-	ScopeName     string
-	ScopeParamTys []types.Type
+	Parent          *SymbolTable
+	htable          map[string]*Entry
+	ScopeName       string
+	ScopeParamTys   []types.Type
+	ScopeParamNames []string
 }
 
-func New(parent *SymbolTable, scopeName string, scopeParamTys []types.Type) *SymbolTable {
-	return &SymbolTable{parent, make(map[string]*Entry), scopeName, scopeParamTys}
+func New(parent *SymbolTable, scopeName string) *SymbolTable {
+	return &SymbolTable{parent, make(map[string]*Entry), scopeName, []types.Type{}, []string{}}
 }
 
 func (st *SymbolTable) Contains(tokLiteral string) Entry {
