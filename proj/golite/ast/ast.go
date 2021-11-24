@@ -144,7 +144,7 @@ func (tys *Types) PerformSABuild(errors []string, symTable *st.SymbolTable) []st
 }
 
 type TypeDeclaration struct {
-	Token *token.Token
+	Token  *token.Token
 	st     *st.SymbolTable
 	Ident  IdentLiteral
 	Fields *Fields
@@ -179,7 +179,7 @@ func (td *TypeDeclaration) PerformSABuild(errors []string, symTable *st.SymbolTa
 		errors = append(errors, fmt.Sprintf("#{td.Token.LineNum}: struct #{structName} already declared"))
 	} else {
 		var entry st.Entry
-		entry = st.NewStructEntry()
+		entry = st.NewStructEntry(td.st)
 		symTable.Insert(structName, &entry)
 		errors = td.Fields.PerformSABuild(errors, td.st)
 	}
@@ -360,7 +360,7 @@ func (fs *Functions) PerformSABuild(errors []string, symTable *st.SymbolTable) [
 }
 
 type Function struct {
-	Token *token.Token
+	Token        *token.Token
 	st           *st.SymbolTable
 	Ident        IdentLiteral
 	Parameters   *Parameters
@@ -401,7 +401,7 @@ func (f *Function) PerformSABuild(errors []string, symTable *st.SymbolTable) []s
 		errors = append(errors, fmt.Sprintf("#{f.Token.LineNum}: function #{funcName} has been declared"))
 	} else {
 		var entry st.Entry
-		entry = st.NewFuncEntry()
+		entry = st.NewFuncEntry(f.ReturnType.GetType(symTable), f.st)
 		symTable.Insert(funcName, &entry)
 		errors = f.Parameters.PerformSABuild(errors, f.st)
 		errors = f.Declarations.PerformSABuild(errors, f.st)
@@ -717,7 +717,7 @@ func NewPackage(ident IdentLiteral) *Package {
 func NewImport(ident IdentLiteral) *Import      { return &Import{nil, ident} }
 func NewTypes(typdecs []TypeDeclaration) *Types { return &Types{nil, typdecs} }
 func NewTypeDeclaration(ident IdentLiteral, fields *Fields) *TypeDeclaration {
-	return &TypeDeclaration{nil, nil,ident, fields}
+	return &TypeDeclaration{nil, nil, ident, fields}
 }
 func NewFields(decls []Decl) *Fields                   { return &Fields{nil, decls} }
 func NewDecl(ident IdentLiteral, ty *Type) *Decl       { return &Decl{nil, ident, ty} }
@@ -873,7 +873,7 @@ func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
 		if entry = symTable.Contains(id.String()); entry == nil {
 			return types.UnknownTySig
 		} else {
-			if idx == len(lv.Idents) - 1 {
+			if idx == len(lv.Idents)-1 {
 				break
 			}
 			symTable = entry.GetScopeST()
@@ -908,7 +908,7 @@ func (exp *Expression) GetType(symTable *st.SymbolTable) types.Type {
 
 	for _, rTerm := range exp.Rights {
 		rightType := rTerm.GetType(symTable)
-		if (leftType != rightType) {
+		if leftType != rightType {
 			return types.UnknownTySig
 		}
 	}
@@ -1145,7 +1145,7 @@ func (selt *SelectorTerm) String() string {
 	}
 	return out.String()
 }
-func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type{
+func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type {
 	facType := selt.Fact.GetType(symTable)
 	if len(selt.Idents) == 0 {
 		return facType
@@ -1170,7 +1170,7 @@ func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type{
 			if entry = symTable.Contains(id.String()); entry == nil {
 				return types.UnknownTySig
 			} else {
-				if idx == len(selt.Idents) - 1 {
+				if idx == len(selt.Idents)-1 {
 					break
 				}
 				symTable = entry.GetScopeST()
@@ -1277,9 +1277,9 @@ type NilNode struct {
 	Token *token.Token
 }
 
-func (n *NilNode) TokenLiteral() string { return n.Token.Literal }
-func (n *NilNode) String() string       { return n.Token.Literal }
-func (n *NilNode) GetType(symTable *st.SymbolTable) types.Type  { return types.VoidTySig }
+func (n *NilNode) TokenLiteral() string                        { return n.Token.Literal }
+func (n *NilNode) String() string                              { return n.Token.Literal }
+func (n *NilNode) GetType(symTable *st.SymbolTable) types.Type { return types.VoidTySig }
 
 // BoolLiteral : True/False
 type BoolLiteral struct {
@@ -1287,9 +1287,9 @@ type BoolLiteral struct {
 	Value bool
 }
 
-func (bl *BoolLiteral) TokenLiteral() string { return bl.Token.Literal }
-func (bl *BoolLiteral) String() string       { return bl.Token.Literal }
-func (bl *BoolLiteral) GetType(symTable *st.SymbolTable) types.Type  { return types.BoolTySig }
+func (bl *BoolLiteral) TokenLiteral() string                        { return bl.Token.Literal }
+func (bl *BoolLiteral) String() string                              { return bl.Token.Literal }
+func (bl *BoolLiteral) GetType(symTable *st.SymbolTable) types.Type { return types.BoolTySig }
 
 // IntLiteral : number (integer)
 type IntLiteral struct {
@@ -1297,9 +1297,9 @@ type IntLiteral struct {
 	Value int64
 }
 
-func (il *IntLiteral) TokenLiteral() string { return il.Token.Literal }
-func (il *IntLiteral) String() string       { return il.Token.Literal }
-func (il *IntLiteral) GetType(symTable *st.SymbolTable) types.Type  { return types.IntTySig }
+func (il *IntLiteral) TokenLiteral() string                        { return il.Token.Literal }
+func (il *IntLiteral) String() string                              { return il.Token.Literal }
+func (il *IntLiteral) GetType(symTable *st.SymbolTable) types.Type { return types.IntTySig }
 
 // IdentLiteral : identifier
 type IdentLiteral struct {
