@@ -12,7 +12,7 @@ import (
 type Node interface {
 	TokenLiteral() string
 	String() string
-	//TypeCheck() []string  // TO-DO
+	TypeCheck([]string, *st.SymbolTable) []string  // TO-DO
 }
 
 // Expr All expression nodes implement this interface
@@ -64,6 +64,14 @@ func (p *Program) PerformSABuild(errors []string, symTable *st.SymbolTable) []st
 	errors = p.Functions.PerformSABuild(errors, symTable)
 	return errors
 }
+func (p *Program) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = p.Package.TypeCheck(errors, symTable)
+	errors = p.Import.TypeCheck(errors, symTable)
+	errors = p.Types.TypeCheck(errors, symTable)
+	errors = p.Declarations.TypeCheck(errors, symTable)
+	errors = p.Functions.TypeCheck(errors, symTable)
+	return errors
+}
 
 type Package struct {
 	Token *token.Token
@@ -87,6 +95,12 @@ func (pkg *Package) String() string {
 	return out.String()
 }
 func (pkg *Package) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
+func (pkg *Package) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	if pkg.Ident.TokenLiteral() != "main" {
+		errors = append(errors, fmt.Sprintf("Only package main is allowed"))
+	}
 	return errors
 }
 
@@ -115,6 +129,9 @@ func (imp *Import) String() string {
 func (imp *Import) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
 	return errors
 }
+func (imp *Import) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 type Types struct {
 	Token *token.Token
@@ -139,6 +156,12 @@ func (tys *Types) String() string {
 func (tys *Types) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
 	for _, typedec := range tys.TypeDeclarations {
 		errors = typedec.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
+func (tys *Types) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	for _, typedec := range tys.TypeDeclarations {
+		errors = typedec.TypeCheck(errors, symTable)
 	}
 	return errors
 }
@@ -171,8 +194,9 @@ func (td *TypeDeclaration) String() string {
 	return out.String()
 }
 func (td *TypeDeclaration) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: find duplicate structures
 	structName := td.Ident.TokenLiteral()
-	scopeSymTable := st.New(symTable, structName, nil)
+	scopeSymTable := st.New(symTable, structName)
 	td.st = scopeSymTable
 
 	if entry := symTable.Contains(structName); entry != nil {
@@ -183,6 +207,12 @@ func (td *TypeDeclaration) PerformSABuild(errors []string, symTable *st.SymbolTa
 		symTable.Insert(structName, &entry)
 		errors = td.Fields.PerformSABuild(errors, td.st)
 	}
+	return errors
+}
+func (td *TypeDeclaration) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	errors2 := td.Fields.TypeCheck(errors, td.st)
+	errors = append(errors, errors2...)
 	return errors
 }
 
@@ -209,8 +239,16 @@ func (fields *Fields) String() string {
 	return out.String()
 }
 func (fields *Fields) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	for _, decl := range fields.Decls {
 		errors = decl.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
+func (fields *Fields) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	for _, decl := range fields.Decls {
+		errors = decl.TypeCheck(errors, symTable)
 	}
 	return errors
 }
@@ -235,6 +273,7 @@ func (decl *Decl) String() string {
 	return out.String()
 }
 func (decl *Decl) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: find duplicate declarations in functions / structures
 	varName := decl.Ident.TokenLiteral()
 	if entry := symTable.Contains(varName); entry != nil {
 		errors = append(errors, fmt.Sprintf("#{decl.Token.LineNum}: variable #{varName} already declared"))
@@ -243,6 +282,22 @@ func (decl *Decl) PerformSABuild(errors []string, symTable *st.SymbolTable) []st
 		entry = st.NewVarEntry()
 		symTable.Insert(varName, &entry)
 	}
+	return errors
+}
+func (decl *Decl) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: set type for the variable id
+
+	// Decl = 'id' Type
+	// get the type from Type
+	varType := decl.Ty.GetType(symTable)
+	// update / set type of 'id' in the symbol table
+	entry := symTable.Contains(decl.Ident.TokenLiteral())
+	// entry must be valid when processing declaration-type statements, because it must have been added to symboltable by PerformSABuild
+	entry.SetType(varType)
+	// include id and its type as a parameter of the function
+	// can be function or struct, but only useful in function
+	symTable.ScopeParamTys = append(symTable.ScopeParamTys, varType)
+	symTable.ScopeParamNames = append(symTable.ScopeParamNames, decl.Ident.TokenLiteral())
 	return errors
 }
 
@@ -266,8 +321,16 @@ func (ds *Declarations) String() string {
 	return out.String()
 }
 func (ds *Declarations) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	for _, dec := range ds.Declarations {
 		errors = dec.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
+func (ds *Declarations) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	for _, dec := range ds.Declarations {
+		errors = dec.TypeCheck(errors, symTable)
 	}
 	return errors
 }
@@ -295,7 +358,17 @@ func (d *Declaration) String() string {
 	return out.String()
 }
 func (d *Declaration) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none, duplicate definitions are examined in d.Ids.PerformSABuild()
 	errors = d.Ids.PerformSABuild(errors, symTable)
+	return errors
+}
+func (d *Declaration) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: set type for ids, symbol table only
+	decType := d.Ty.GetType(symTable)
+	for _, id := range d.Ids.Idents {
+		entry := symTable.Contains(id.TokenLiteral())
+		entry.SetType(decType)
+	}
 	return errors
 }
 
@@ -321,6 +394,7 @@ func (ids *Ids) String() string {
 	return out.String()
 }
 func (ids *Ids) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// Objective: find duplicate declarations
 	for _, id := range ids.Idents {
 		varName := id.TokenLiteral()
 		if entry := symTable.Contains(varName); entry != nil {
@@ -331,6 +405,10 @@ func (ids *Ids) PerformSABuild(errors []string, symTable *st.SymbolTable) []stri
 			symTable.Insert(varName, &entry)
 		}
 	}
+	return errors
+}
+func (ids *Ids) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none, accomplished in Declaration
 	return errors
 }
 
@@ -353,8 +431,16 @@ func (fs *Functions) String() string {
 	return out.String()
 }
 func (fs *Functions) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	for _, fun := range fs.Functions {
 		errors = fun.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
+func (fs *Functions) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	for _, fun := range fs.Functions {
+		errors = fun.TypeCheck(errors, symTable)
 	}
 	return errors
 }
@@ -394,19 +480,35 @@ func (f *Function) String() string {
 	return out.String()
 }
 func (f *Function) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// Objective: find duplicate function definitions
 	funcName := f.Ident.TokenLiteral()
-	scopeSymTable := st.New(symTable, funcName, nil)
+	scopeSymTable := st.New(symTable, funcName)
 	f.st = scopeSymTable
 	if entry := symTable.Contains(funcName); entry != nil {
 		errors = append(errors, fmt.Sprintf("#{f.Token.LineNum}: function #{funcName} has been declared"))
 	} else {
 		var entry st.Entry
 		entry = st.NewFuncEntry(f.ReturnType.GetType(symTable), f.st)
+		// to do: replace above line with the one blow after modifying NewFuncEntry
+		//entry = st.NewFuncEntry(f.ReturnType.GetType(symTable), f.st, f.ReturnType.GetType(symTable))
 		symTable.Insert(funcName, &entry)
 		errors = f.Parameters.PerformSABuild(errors, f.st)
 		errors = f.Declarations.PerformSABuild(errors, f.st)
 		errors = f.Statements.PerformSABuild(errors, f.st)
 	}
+	return errors
+}
+func (f *Function) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// Objective: add parameters, return type to function symbol table and entry in the outer symbol table
+	// parameters are added to both inner symbol table and function signature in the outer symbol table by Decl invoked next line
+	errors = f.Parameters.TypeCheck(errors, f.st)
+	errors = f.Declarations.TypeCheck(errors, f.st)
+	errors = f.Statements.TypeCheck(errors, f.st)
+	//if len(errors) == 0 {
+	//	// modify return type
+	//	//entry := symTable.Contains(f.Ident.TokenLiteral())
+	//	//entry.SetReturnType(f.ReturnType.GetType(symTable))
+	//}
 	return errors
 }
 
@@ -437,8 +539,16 @@ func (params *Parameters) String() string {
 	return out.String()
 }
 func (params *Parameters) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	for _, decl := range params.Decls {
 		errors = decl.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
+func (params *Parameters) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	for _, decl := range params.Decls {
+		errors = decl.TypeCheck(errors, symTable)
 	}
 	return errors
 }
@@ -464,8 +574,16 @@ func (stmts *Statements) String() string {
 	return out.String()
 }
 func (stmts *Statements) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	for _, stmt := range stmts.Statements {
 		errors = stmt.PerformSABuild(errors, symTable)
+	}
+	return errors
+}
+func (stmts *Statements) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	for _, stmt := range stmts.Statements {
+		errors = stmt.TypeCheck(errors, symTable)
 	}
 	return errors
 }
@@ -487,7 +605,13 @@ func (s *Statement) String() string {
 	return out.String()
 }
 func (s *Statement) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	errors = s.Stmt.PerformSABuild(errors, symTable)
+	return errors
+}
+func (s *Statement) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	errors = s.Stmt.TypeCheck(errors, symTable)
 	return errors
 }
 
@@ -511,7 +635,13 @@ func (b *Block) String() string {
 	return out.String()
 }
 func (b *Block) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	errors = b.Statements.PerformSABuild(errors, symTable)
+	return errors
+}
+func (b *Block) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	errors = b.Statements.TypeCheck(errors, symTable)
 	return errors
 }
 
@@ -539,6 +669,22 @@ func (a *Assignment) String() string {
 	return out.String()
 }
 func (a *Assignment) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	return errors
+}
+func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: matching of types on both sides of the assignment statement
+	// to do: implement expr.TypeCheck()
+	//errors = a.Lvalue.TypeCheck(errors, symTable)
+	//errors = a.Expr.TypeCheck(errors, symTable)
+	if len(errors) == 0 {
+		leftType := a.Lvalue.GetType(symTable)
+		rightType := a.Expr.GetType(symTable)
+		if leftType != rightType {
+			errors = append(errors, fmt.Sprintf("#{a.Token.LineNum}: type mismatch"))
+		}
+		// to do: LValue shall be assignable
+	}
 	return errors
 }
 
@@ -566,6 +712,16 @@ func (r *Read) String() string {
 	return out.String()
 }
 func (r *Read) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	return errors
+}
+func (r *Read) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: verify the variable is declared
+	varName := r.Ident.TokenLiteral()
+	entry := symTable.Contains(varName)
+	if entry == nil {
+		errors = append(errors, fmt.Sprintf("#{r.Token.LineNum}: variable #{varName} has not been declared"))
+	}
 	return errors
 }
 
@@ -593,6 +749,16 @@ func (p *Print) String() string {
 	return out.String()
 }
 func (p *Print) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	return errors
+}
+func (p *Print) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: verify the variable is declared
+	varName := p.Ident.TokenLiteral()
+	entry := symTable.Contains(varName)
+	if entry == nil {
+		errors = append(errors, fmt.Sprintf("#{p.Token.LineNum}: variable #{varName} has not been declared"))
+	}
 	return errors
 }
 
@@ -625,8 +791,23 @@ func (cond *Conditional) String() string {
 	return out.String()
 }
 func (cond *Conditional) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	errors = cond.Block.PerformSABuild(errors, symTable)
 	errors = cond.ElseBlock.PerformSABuild(errors, symTable)
+	return errors
+}
+func (cond *Conditional) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: boolean expression as the conditional expression surrounded by parenthesis
+	condType := cond.Expr.GetType(symTable)
+	// to do: implement expr.TypeCheck()
+	//errors = cond.Expr.TypeCheck(errors, symTable)
+	errors = cond.Block.TypeCheck(errors, symTable)
+	errors = cond.ElseBlock.TypeCheck(errors, symTable)
+	if len(errors) == 0 {
+		if condType != types.BoolTySig {
+			errors = append(errors, fmt.Sprintf("#{cond.Token.LineNum}: boolean expression is desired"))
+		}
+	}
 	return errors
 }
 
@@ -654,7 +835,21 @@ func (lp *Loop) String() string {
 	return out.String()
 }
 func (lp *Loop) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
 	errors = lp.Block.PerformSABuild(errors, symTable)
+	return errors
+}
+func (lp *Loop) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: boolean expression as the conditional expression surrounded by parenthesis
+	condType := lp.Expr.GetType(symTable)
+	// to do: implement expr.TypeCheck()
+	//errors = lp.Expr.TypeCheck(errors, symTable)
+	errors = lp.Block.TypeCheck(errors, symTable)
+	if len(errors) == 0 {
+		if condType != types.BoolTySig {
+			errors = append(errors, fmt.Sprintf("#{lp.Token.LineNum}: boolean expression is desired"))
+		}
+	}
 	return errors
 }
 
@@ -680,6 +875,20 @@ func (ret *Return) String() string {
 	return out.String()
 }
 func (ret *Return) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	return errors
+}
+func (ret *Return) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// objective: match return type with signature
+	// to do: implement expr.TypeCheck()
+	//errors = ret.Expr.TypeCheck(errors, symTable)
+	actRetType := ret.Expr.GetType(symTable)
+	decRetType := types.VoidTySig // to do: get return type from symbol table, now the relevant fields are private
+	if len(errors) == 0 {
+		if actRetType != decRetType {
+			errors = append(errors, fmt.Sprintf("#{ret.Token.LineNum}: return type expected #{decRetType}, #{actRetType} found"))
+		}
+	}
 	return errors
 }
 
@@ -705,6 +914,20 @@ func (invoc *Invocation) String() string {
 	return out.String()
 }
 func (invoc *Invocation) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	// objective: none
+	return errors
+}
+func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// check whether function is declared
+	funcName := invoc.Ident.TokenLiteral()
+	entry := symTable.Contains(funcName)
+	if entry == nil {
+		errors = append(errors, fmt.Sprintf("#{invoc.Token.LineNum}: function #{funcName} has not been defined"))
+	} else {
+		// to do: verify the match of arg list with param list in invoc.Args.TypeCheck()
+		symTable = entry.GetScopeST()
+		//errors = invoc.Args.TypeCheck(errors, symTable)
+	}
 	return errors
 }
 
