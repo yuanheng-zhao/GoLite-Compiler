@@ -489,8 +489,6 @@ func (f *Function) PerformSABuild(errors []string, symTable *st.SymbolTable) []s
 	} else {
 		var entry st.Entry
 		entry = st.NewFuncEntry(f.ReturnType.GetType(symTable), f.st)
-		// to do: replace above line with the one blow after modifying NewFuncEntry
-		//entry = st.NewFuncEntry(f.ReturnType.GetType(symTable), f.st, f.ReturnType.GetType(symTable))
 		symTable.Insert(funcName, &entry)
 		errors = f.Parameters.PerformSABuild(errors, f.st)
 		errors = f.Declarations.PerformSABuild(errors, f.st)
@@ -504,11 +502,6 @@ func (f *Function) TypeCheck(errors []string, symTable *st.SymbolTable) []string
 	errors = f.Parameters.TypeCheck(errors, f.st)
 	errors = f.Declarations.TypeCheck(errors, f.st)
 	errors = f.Statements.TypeCheck(errors, f.st)
-	//if len(errors) == 0 {
-	//	// modify return type
-	//	//entry := symTable.Contains(f.Ident.TokenLiteral())
-	//	//entry.SetReturnType(f.ReturnType.GetType(symTable))
-	//}
 	return errors
 }
 
