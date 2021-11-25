@@ -12,7 +12,7 @@ import (
 type Node interface {
 	TokenLiteral() string
 	String() string
-	TypeCheck([]string, *st.SymbolTable) []string  // TO-DO
+	TypeCheck([]string, *st.SymbolTable) []string // TO-DO
 }
 
 // Expr All expression nodes implement this interface
@@ -992,6 +992,9 @@ func (t *Type) GetType(symTable *st.SymbolTable) types.Type {
 		return types.StructTySig
 	}
 }
+func (t *Type) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 type ReturnType struct {
 	Token *token.Token
@@ -1009,13 +1012,16 @@ func (rt *ReturnType) String() string {
 	out.WriteString(rt.Ty.String())
 	return out.String()
 }
-
 func (rt *ReturnType) GetType(symTable *st.SymbolTable) types.Type {
 	if rt.Ty.TokenLiteral() == "" {
 		return types.VoidTySig
 	} else {
 		return rt.Ty.GetType(symTable)
 	}
+}
+func (rt *ReturnType) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = rt.Ty.TypeCheck(errors, symTable)
+	return errors
 }
 
 type Arguments struct {
@@ -1045,6 +1051,18 @@ func (args *Arguments) String() string {
 }
 func (args *Arguments) GetType(symTable *st.SymbolTable) types.Type {
 	return types.VoidTySig
+}
+func (args *Arguments) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// used as parameters for calling a function
+	expectedTys := symTable.ScopeParamTys
+	for idx, expr := range args.Exprs {
+		errors = expr.TypeCheck(errors, symTable)
+		givenParamTy := expr.GetType(symTable)
+		if givenParamTy != expectedTys[idx] {
+			errors = append(errors, fmt.Sprintf("Expected paramter type #{expectedTys[idx}; given parameter type #{givenParamTy} #{args.Exprs[idx]}"))
+		}
+	}
+	return errors
 }
 
 type LValue struct {
@@ -1097,6 +1115,9 @@ func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
 	}
 	return entry.GetEntryType()
 }
+func (lv *LValue) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 type Expression struct {
 	Token  *token.Token
@@ -1130,6 +1151,27 @@ func (exp *Expression) GetType(symTable *st.SymbolTable) types.Type {
 	}
 	return leftType
 }
+func (exp *Expression) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = exp.Left.TypeCheck(errors, symTable)
+	leftMostTy := exp.Left.GetType(symTable)
+	if len(exp.Rights) != 0 {
+		// OR operation, needs bool types on both sides
+		if leftMostTy != types.BoolTySig {
+			errors = append(errors, fmt.Sprintf("[#{exp.Token.LineNum}]: the leftmost expression expected bool type but receives #{leftMostTy.GetName()}"))
+			return errors
+		}
+	}
+	// check every expression is in the same type (types.BoolTySig)
+	for _, curr := range exp.Rights {
+		errors = curr.TypeCheck(errors, symTable)
+		currTy := curr.GetType(symTable)
+		if currTy != leftMostTy {
+			errors = append(errors, fmt.Sprintf("[#{exp.Token.LineNum}]: expected #{lefType.GetName()}, #{currTy.GetName()} found."))
+			break
+		}
+	}
+	return errors
+}
 
 type BoolTerm struct {
 	Token  *token.Token
@@ -1162,6 +1204,27 @@ func (bt *BoolTerm) GetType(symTable *st.SymbolTable) types.Type {
 		}
 	}
 	return leftType
+}
+func (bt *BoolTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = bt.Left.TypeCheck(errors, symTable)
+	leftMostTy := bt.Left.GetType(symTable)
+	if len(bt.Rights) != 0 {
+		// OR operation, needs bool types on both sides
+		if leftMostTy != types.BoolTySig {
+			errors = append(errors, fmt.Sprintf("[#{bt.Token.LineNum}]: the leftmost expression expected bool type but receives #{leftMostTy.GetName()}"))
+			return errors
+		}
+	}
+	// check every expression is in the same type (types.BoolTySig)
+	for _, curr := range bt.Rights {
+		errors = curr.TypeCheck(errors, symTable)
+		currTy := curr.GetType(symTable)
+		if currTy != leftMostTy {
+			errors = append(errors, fmt.Sprintf("[#{bt.Token.LineNum}]: expected #{lefType.GetName()}, #{currTy.GetName()} found."))
+			break
+		}
+	}
+	return errors
 }
 
 type EqualTerm struct {
@@ -1198,6 +1261,13 @@ func (et *EqualTerm) GetType(symTable *st.SymbolTable) types.Type {
 	}
 	return leftType
 }
+func (et *EqualTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = et.Left.TypeCheck(errors, symTable)
+	for _, rTerm := range et.Rights {
+		errors = rTerm.TypeCheck(errors, symTable)
+	}
+	return errors
+}
 
 type RelationTerm struct {
 	Token             *token.Token
@@ -1232,6 +1302,27 @@ func (rt *RelationTerm) GetType(symTable *st.SymbolTable) types.Type {
 		}
 	}
 	return leftType
+}
+func (rt *RelationTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = rt.Left.TypeCheck(errors, symTable)
+	if len(rt.Rights) == 0 {
+		return errors
+	}
+	// with + or - operations, every Term should be int type
+	leftMostTy := rt.Left.GetType(symTable)
+	if leftMostTy != types.IntTySig {
+		errors = append(errors, fmt.Sprintf("#{rt.Token.LineNum}: #{rt.Left.String()} is type of #{leftMostTy.GetName()} but not int"))
+		return errors
+	}
+	for _, rTerm := range rt.Rights {
+		errors = rTerm.TypeCheck(errors, symTable)
+		currTy := rTerm.GetType(symTable)
+		if currTy != types.IntTySig {
+			errors = append(errors, fmt.Sprintf("#{rTerm.Token.LineNum}: #{rTerm.String()} is type of #{currTy.GetName()} but not int"))
+			return errors
+		}
+	}
+	return errors
 }
 
 type SimpleTerm struct {
@@ -1268,6 +1359,27 @@ func (st *SimpleTerm) GetType(symTable *st.SymbolTable) types.Type {
 	}
 	return leftType
 }
+func (st *SimpleTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = st.Left.TypeCheck(errors, symTable)
+	if len(st.Rights) == 0 {
+		return errors
+	}
+	// with + or - operations, every Term should be int type
+	leftMostTy := st.Left.GetType(symTable)
+	if leftMostTy != types.IntTySig {
+		errors = append(errors, fmt.Sprintf("#{st.Token.LineNum}: #{st.Left.String()} is type of #{leftMostTy.GetName()} but not int"))
+		return errors
+	}
+	for _, rTerm := range st.Rights {
+		errors = rTerm.TypeCheck(errors, symTable)
+		currTy := rTerm.GetType(symTable)
+		if currTy != types.IntTySig {
+			errors = append(errors, fmt.Sprintf("#{rTerm.Token.LineNum}: #{rTerm.String()} is type of #{currTy.GetName()} but not int"))
+			return errors
+		}
+	}
+	return errors
+}
 
 type Term struct {
 	Token         *token.Token
@@ -1302,6 +1414,27 @@ func (t *Term) GetType(symTable *st.SymbolTable) types.Type {
 		}
 	}
 	return leftType
+}
+func (t *Term) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = t.Left.TypeCheck(errors, symTable)
+	if len(t.Rights) == 0 {
+		return errors
+	}
+	// with * or / operations, every UnaryTerm should be int type
+	leftMostTy := t.Left.GetType(symTable)
+	if leftMostTy != types.IntTySig {
+		errors = append(errors, fmt.Sprintf("#{t.Token.LineNum}: #{t.Left.String()} is type of #{leftMostTy.GetName()} but not int"))
+		return errors
+	}
+	for _, rTerm := range t.Rights {
+		errors = rTerm.TypeCheck(errors, symTable)
+		currTy := rTerm.GetType(symTable)
+		if currTy != types.IntTySig {
+			errors = append(errors, fmt.Sprintf("#{rTerm.Token.LineNum}: #{rTerm.String()} is type of #{currTy.GetName()} but not int"))
+			return errors
+		}
+	}
+	return errors
 }
 
 type UnaryTerm struct {
@@ -1338,6 +1471,13 @@ func (ut *UnaryTerm) GetType(symTable *st.SymbolTable) types.Type {
 	} else {
 		return ut.SelectorTerm.GetType(symTable)
 	}
+}
+func (ut *UnaryTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = ut.SelectorTerm.TypeCheck(errors, symTable)
+	if ut.GetType(symTable) == types.UnknownTySig {
+		errors = append(errors, fmt.Sprintf("#{ut.Token.LineNum}: (UnaryTerm) inner field has not been defined"))
+	}
+	return errors
 }
 
 type SelectorTerm struct {
@@ -1396,6 +1536,13 @@ func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type {
 	}
 	return types.UnknownTySig
 }
+func (selt *SelectorTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = selt.TypeCheck(errors, symTable)
+	if selt.GetType(symTable) == types.UnknownTySig {
+		errors = append(errors, fmt.Sprintf("#{selt.Token.LineNum}: (SelectorTerm) inner field has not been defined"))
+	}
+	return errors
+}
 
 type Factor struct {
 	Token *token.Token
@@ -1415,6 +1562,10 @@ func (f *Factor) String() string {
 }
 func (f *Factor) GetType(symTable *st.SymbolTable) types.Type {
 	return f.Expr.GetType(symTable)
+}
+func (f *Factor) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = f.Expr.TypeCheck(errors, symTable)
+	return errors
 }
 
 func NewType(typeLit string) *Type                                { return &Type{nil, typeLit} }
@@ -1463,7 +1614,26 @@ func (ie *InvocExpr) String() string {
 	out.WriteString(ie.InnerArgs.String())
 	return out.String()
 }
-func (ie *InvocExpr) GetType(symTable *st.SymbolTable) types.Type { return types.FuncTySig }
+func (ie *InvocExpr) GetType(symTable *st.SymbolTable) types.Type {
+	// return types.FuncTySig
+	// TO-BE-NOTICED
+	if funcEntry := symTable.Contains(ie.Ident.Id); funcEntry != nil {
+		return funcEntry // NEED A GETTER TO RETRIEVE THE returnType, same issue ...
+	}
+	return types.UnknownTySig
+}
+func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	// refer from Invocation.TypeCheck
+	funcName := ie.Ident.TokenLiteral()
+	entry := symTable.Contains(funcName)
+	if entry == nil {
+		errors = append(errors, fmt.Sprintf("#{ie.Token.LineNum}: function #{funcName} has not been defined"))
+	} else {
+		symTable = entry.GetScopeST()
+		errors = ie.InnerArgs.TypeCheck(errors, symTable)
+	}
+	return errors
+}
 
 // PriorityExpression : '(' Expression ')' (inside Factor)
 type PriorityExpression struct {
@@ -1487,6 +1657,10 @@ func (pe *PriorityExpression) String() string {
 func (pe *PriorityExpression) GetType(symTable *st.SymbolTable) types.Type {
 	return pe.InnerExpression.GetType(symTable)
 }
+func (pe *PriorityExpression) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = pe.InnerExpression.TypeCheck(errors, symTable)
+	return errors
+}
 
 // NilNode : nil (keyword "nil")
 type NilNode struct {
@@ -1496,6 +1670,9 @@ type NilNode struct {
 func (n *NilNode) TokenLiteral() string                        { return n.Token.Literal }
 func (n *NilNode) String() string                              { return n.Token.Literal }
 func (n *NilNode) GetType(symTable *st.SymbolTable) types.Type { return types.VoidTySig }
+func (n *NilNode) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 // BoolLiteral : True/False
 type BoolLiteral struct {
@@ -1506,6 +1683,9 @@ type BoolLiteral struct {
 func (bl *BoolLiteral) TokenLiteral() string                        { return bl.Token.Literal }
 func (bl *BoolLiteral) String() string                              { return bl.Token.Literal }
 func (bl *BoolLiteral) GetType(symTable *st.SymbolTable) types.Type { return types.BoolTySig }
+func (bl *BoolLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 // IntLiteral : number (integer)
 type IntLiteral struct {
@@ -1516,6 +1696,9 @@ type IntLiteral struct {
 func (il *IntLiteral) TokenLiteral() string                        { return il.Token.Literal }
 func (il *IntLiteral) String() string                              { return il.Token.Literal }
 func (il *IntLiteral) GetType(symTable *st.SymbolTable) types.Type { return types.IntTySig }
+func (il *IntLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	return errors
+}
 
 // IdentLiteral : identifier
 type IdentLiteral struct {
@@ -1539,4 +1722,11 @@ func (idl *IdentLiteral) GetType(symTable *st.SymbolTable) types.Type {
 		}
 	}
 	return entry.GetEntryType()
+}
+func (idl *IdentLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	idlTy := idl.GetType(symTable)
+	if idlTy == types.UnknownTySig {
+		errors = append(errors, fmt.Sprintf("[#{idl.Token.LineNum}]: #{idl.Id} has not been defined."))
+	}
+	return errors
 }
