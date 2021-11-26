@@ -31,6 +31,7 @@ type Entry interface {
 	SetValue(s string)
 	GetEntryType() types.Type
 	GetScopeST() *SymbolTable
+	GetReturnTy() types.Type // Only implement for funcEntry
 }
 
 type VarEntry struct {
@@ -53,6 +54,10 @@ func (ve *VarEntry) SetType(t types.Type) {
 func (ve *VarEntry) SetValue(s string) {
 	ve.value = s
 }
+func (ve *VarEntry) GetReturnTy() types.Type {
+	// dummy one, never use
+	return types.UnknownTySig
+}
 
 type FuncEntry struct {
 	ty         types.Type
@@ -71,6 +76,9 @@ func (fe *FuncEntry) GetScopeST() *SymbolTable {
 }
 func (fe *FuncEntry) SetType(t types.Type) {}
 func (fe *FuncEntry) SetValue(s string)    {}
+func (fe *FuncEntry) GetReturnTy() types.Type {
+	return fe.returnType
+}
 
 type StructEntry struct {
 	ty      types.Type
@@ -88,3 +96,7 @@ func (se *StructEntry) GetScopeST() *SymbolTable {
 }
 func (se *StructEntry) SetType(t types.Type) {}
 func (se *StructEntry) SetValue(s string)    {}
+func (se *StructEntry) GetReturnTy() types.Type {
+	// dummy one. never use
+	return types.UnknownTySig
+}

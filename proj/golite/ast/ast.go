@@ -667,16 +667,27 @@ func (a *Assignment) PerformSABuild(errors []string, symTable *st.SymbolTable) [
 }
 func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// objective: matching of types on both sides of the assignment statement
-	// to do: implement expr.TypeCheck()
-	//errors = a.Lvalue.TypeCheck(errors, symTable)
-	//errors = a.Expr.TypeCheck(errors, symTable)
+	errors = a.Lvalue.TypeCheck(errors, symTable)
+	errors = a.Expr.TypeCheck(errors, symTable)
 	if len(errors) == 0 {
 		leftType := a.Lvalue.GetType(symTable)
 		rightType := a.Expr.GetType(symTable)
 		if leftType != rightType {
 			errors = append(errors, fmt.Sprintf("#{a.Token.LineNum}: type mismatch"))
+			return errors
 		}
-		// to do: LValue shall be assignable
+		if leftType != types.IntTySig && leftType != types.BoolTySig {
+			errors = append(errors, fmt.Sprintf("[#{a.Token.LineNum}]: #{a.Lvalue.String()} not assignable"))
+			return errors
+		}
+		if leftType == types.IntTySig && a.Lvalue.Token.Type == token.NUM {
+			errors = append(errors, fmt.Sprintf("[#{a.Token.LineNum}]: #{a.Lvalue.String()} not assignable"))
+			return errors
+		}
+		if leftType == types.BoolTySig && (a.Lvalue.Token.Type == token.TRUE || a.Lvalue.Token.Type == token.FALSE) {
+			errors = append(errors, fmt.Sprintf("[#{a.Token.LineNum}]: #{a.Lvalue.String()} not assignable"))
+			return errors
+		}
 	}
 	return errors
 }
@@ -792,8 +803,7 @@ func (cond *Conditional) PerformSABuild(errors []string, symTable *st.SymbolTabl
 func (cond *Conditional) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// objective: boolean expression as the conditional expression surrounded by parenthesis
 	condType := cond.Expr.GetType(symTable)
-	// to do: implement expr.TypeCheck()
-	//errors = cond.Expr.TypeCheck(errors, symTable)
+	errors = cond.Expr.TypeCheck(errors, symTable)
 	errors = cond.Block.TypeCheck(errors, symTable)
 	errors = cond.ElseBlock.TypeCheck(errors, symTable)
 	if len(errors) == 0 {
@@ -835,8 +845,7 @@ func (lp *Loop) PerformSABuild(errors []string, symTable *st.SymbolTable) []stri
 func (lp *Loop) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// objective: boolean expression as the conditional expression surrounded by parenthesis
 	condType := lp.Expr.GetType(symTable)
-	// to do: implement expr.TypeCheck()
-	//errors = lp.Expr.TypeCheck(errors, symTable)
+	errors = lp.Expr.TypeCheck(errors, symTable)
 	errors = lp.Block.TypeCheck(errors, symTable)
 	if len(errors) == 0 {
 		if condType != types.BoolTySig {
@@ -873,10 +882,11 @@ func (ret *Return) PerformSABuild(errors []string, symTable *st.SymbolTable) []s
 }
 func (ret *Return) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// objective: match return type with signature
-	// to do: implement expr.TypeCheck()
-	//errors = ret.Expr.TypeCheck(errors, symTable)
+	errors = ret.Expr.TypeCheck(errors, symTable)
+	// go to outer symbol table and retrieve the entry
+	funcEntry := symTable.Parent.Contains(symTable.ScopeName) // must exist
+	decRetType := funcEntry.GetReturnTy()                     // must exist
 	actRetType := ret.Expr.GetType(symTable)
-	decRetType := types.VoidTySig // to do: get return type from symbol table, now the relevant fields are private
 	if len(errors) == 0 {
 		if actRetType != decRetType {
 			errors = append(errors, fmt.Sprintf("#{ret.Token.LineNum}: return type expected #{decRetType}, #{actRetType} found"))
@@ -917,9 +927,8 @@ func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	if entry == nil {
 		errors = append(errors, fmt.Sprintf("#{invoc.Token.LineNum}: function #{funcName} has not been defined"))
 	} else {
-		// to do: verify the match of arg list with param list in invoc.Args.TypeCheck()
 		symTable = entry.GetScopeST()
-		//errors = invoc.Args.TypeCheck(errors, symTable)
+		errors = invoc.Args.TypeCheck(errors, symTable)
 	}
 	return errors
 }
@@ -1116,6 +1125,10 @@ func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
 	return entry.GetEntryType()
 }
 func (lv *LValue) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	errors = lv.TypeCheck(errors, symTable)
+	if lv.GetType(symTable) == types.UnknownTySig {
+		errors = append(errors, fmt.Sprintf("#{lv.Token.LineNum}: (LValue) inner field has not been defined"))
+	}
 	return errors
 }
 
@@ -1557,7 +1570,7 @@ func (f *Factor) TokenLiteral() string {
 }
 func (f *Factor) String() string {
 	out := bytes.Buffer{}
-	out.WriteString(f.Expr.String()) // TO-DO
+	out.WriteString(f.Expr.String())
 	return out.String()
 }
 func (f *Factor) GetType(symTable *st.SymbolTable) types.Type {
@@ -1615,10 +1628,8 @@ func (ie *InvocExpr) String() string {
 	return out.String()
 }
 func (ie *InvocExpr) GetType(symTable *st.SymbolTable) types.Type {
-	// return types.FuncTySig
-	// TO-BE-NOTICED
 	if funcEntry := symTable.Contains(ie.Ident.Id); funcEntry != nil {
-		return funcEntry // NEED A GETTER TO RETRIEVE THE returnType, same issue ...
+		return funcEntry.GetReturnTy()
 	}
 	return types.UnknownTySig
 }
