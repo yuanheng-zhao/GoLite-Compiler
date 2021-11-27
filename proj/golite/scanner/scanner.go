@@ -2,8 +2,11 @@ package scanner
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
+	"os"
+	ct "proj/golite/context"
 	"proj/golite/token"
 	"regexp"
 )
@@ -26,8 +29,18 @@ type Scanner struct {
 	lineNumber int
 }
 
-func New(inputReader *bufio.Reader) *Scanner {
-	scanner := &Scanner{reader: inputReader, lexeme: ""}
+func New(ctx ct.CompilerContext) *Scanner {
+	sourcePath := ctx.SourcePath()
+
+	// Create a *bufio.Reader based on the source path of the input compilerContext
+	fileObj, err := os.Open(sourcePath)
+	if err != nil { // the filename should be valid
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	reader := bufio.NewReader(fileObj)
+
+	scanner := &Scanner{reader: reader, lexeme: ""}
 	scanner.numberCompiled, _ = regexp.Compile("^[0-9]+$")
 	scanner.idCompiled, _ = regexp.Compile("^[a-zA-Z][a-zA-Z0-9]*$")
 	scanner.whitespaces, _ = regexp.Compile("\\s+")
@@ -188,5 +201,15 @@ func (l *Scanner) NextToken() token.Token {
 				return token.Token{Type: tok, Literal: tempLexeme, LineNum: tempLineNum}
 			}
 		}
+	}
+}
+
+// Tokens print out all the tokens
+func (l *Scanner) Tokens() {
+	var tok token.Token
+	// eof_token := token.Token{Type: token.EOF, Literal: "EOF"}
+	for tok.Type != token.EOF {
+		tok = l.NextToken()
+		fmt.Println(tok)
 	}
 }

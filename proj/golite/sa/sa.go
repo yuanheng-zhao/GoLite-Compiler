@@ -10,10 +10,9 @@ func reportErrors(errors []string) bool {
 	return !(len(errors) == 0)
 }
 
-
 func PerformSA(program *ast.Program) *st.SymbolTable {
 	// Define a new global table
-	globalST := st.New(nil, "global", nil)
+	globalST := st.New(nil, "global")
 	errors := make([]string, 0)
 
 	// First Build the Symbol Table(s) for all declarations

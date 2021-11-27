@@ -1,8 +1,7 @@
 package scanner
 
 import (
-	"bufio"
-	"os"
+	ct "proj/golite/context"
 	"proj/golite/token"
 	"testing"
 )
@@ -58,15 +57,9 @@ func VerifyTestFull(t *testing.T, tests []ExpectedResultFull, scanner *Scanner) 
 }
 
 func Test1(t *testing.T) {
-	// s1 := "This is a test string"
+	ctx := ct.New(false, false, "test1.golite")
+	scanner := New(*ctx)
 
-	fileObj, _ := os.Open("test1.golite")
-	reader := bufio.NewReader(fileObj)
-	scanner := New(reader)
-
-	// 	package test1;
-	// import "fmt";
-	// a = 3;
 	expected := []ExpectedResult{
 		{token.PACK, "package"},
 		{token.ID, "test1"},
@@ -102,22 +95,14 @@ func Test1(t *testing.T) {
 	VerifyTest(t, expected, scanner)
 
 	// test with line number
-	fileObj, _ = os.Open("test1.golite")
-	reader = bufio.NewReader(fileObj)
-	scanner = New(reader)
+	scanner = New(*ctx)
 	VerifyTestFull(t, expectedFull, scanner)
 }
 
 func Test2(t *testing.T) {
-	// s1 := "This is a test string"
+	ctx := ct.New(false, false, "test2.golite")
+	scanner := New(*ctx)
 
-	fileObj, _ := os.Open("test2.golite")
-	reader := bufio.NewReader(fileObj)
-	scanner := New(reader)
-
-	// 	package test1;
-	// import "fmt";
-	// a = 3;
 	expected := []ExpectedResult{
 		{token.PACK, "package"},
 		{token.ID, "main"},
@@ -158,15 +143,9 @@ func Test2(t *testing.T) {
 }
 
 func Test3(t *testing.T) {
-	// s1 := "This is a test string"
+	ctx := ct.New(false, false, "test3.golite")
+	scanner := New(*ctx)
 
-	fileObj, _ := os.Open("test3.golite")
-	reader := bufio.NewReader(fileObj)
-	scanner := New(reader)
-
-	// 	package test1;
-	// import "fmt";
-	// a = 3;
 	expected := []ExpectedResult{
 		{token.ID, "printa"},
 		{token.NUM, "2"},
@@ -204,11 +183,8 @@ func Test3(t *testing.T) {
 }
 
 func Test4(t *testing.T) {
-	// s1 := "This is a test string"
-
-	fileObj, _ := os.Open("test4.golite")
-	reader := bufio.NewReader(fileObj)
-	scanner := New(reader)
+	ctx := ct.New(false, false, "test4.golite")
+	scanner := New(*ctx)
 
 	expected := []ExpectedResult{
 		{token.PACK, "package"},

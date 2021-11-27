@@ -1,49 +1,48 @@
 package parser
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	ct "proj/golite/context"
 	"proj/golite/scanner"
-	ct "proj/golite/token"
+	tk "proj/golite/token"
 	"testing"
 )
 
 func Test1(t *testing.T) {
-	fileObj, _ := os.Open("test1_parser.golite")
-	reader := bufio.NewReader(fileObj)
-	myScanner := scanner.New(reader)
+	ctx := ct.New(false, false, "test1_parser.golite")
+	myScanner := scanner.New(*ctx)
+
 	// The expected result struct represents the token stream for the input source
-	tokens := []ct.Token{
-		{ct.PACK, "package", 1},
-		{ct.ID, "main", 1},
-		{ct.SEMICOLON, ";", 1},
+	tokens := []tk.Token{
+		{tk.PACK, "package", 1},
+		{tk.ID, "main", 1},
+		{tk.SEMICOLON, ";", 1},
 
-		{ct.IMPORT, "import", 2},
-		{ct.QTDMARK, "\"", 2},
-		{ct.FMT, "fmt", 2},
-		{ct.QTDMARK, "\"", 2},
-		{ct.SEMICOLON, ";", 2},
+		{tk.IMPORT, "import", 2},
+		{tk.QTDMARK, "\"", 2},
+		{tk.FMT, "fmt", 2},
+		{tk.QTDMARK, "\"", 2},
+		{tk.SEMICOLON, ";", 2},
 
-		{ct.FUNC, "func", 3},
-		{ct.ID, "main", 3},
-		{ct.LPAREN, "(", 3},
-		{ct.RPAREN, ")", 3},
-		{ct.LBRACE, "{", 3},
+		{tk.FUNC, "func", 3},
+		{tk.ID, "main", 3},
+		{tk.LPAREN, "(", 3},
+		{tk.RPAREN, ")", 3},
+		{tk.LBRACE, "{", 3},
 
-		{ct.VAR, "var", 4},
-		{ct.ID, "a", 4},
-		{ct.INT, "int", 4},
-		{ct.SEMICOLON, ";", 4},
+		{tk.VAR, "var", 4},
+		{tk.ID, "a", 4},
+		{tk.INT, "int", 4},
+		{tk.SEMICOLON, ";", 4},
 
-		{ct.ID, "a", 5},
-		{ct.ASSIGN, "=", 5},
-		{ct.NUM, "1", 5},
-		{ct.ADD, "+", 5},
-		{ct.NUM, "1", 5},
-		{ct.SEMICOLON, ";", 5},
+		{tk.ID, "a", 5},
+		{tk.ASSIGN, "=", 5},
+		{tk.NUM, "1", 5},
+		{tk.ADD, "+", 5},
+		{tk.NUM, "1", 5},
+		{tk.SEMICOLON, ";", 5},
 
-		{ct.RBRACE, "}", 6},
+		{tk.RBRACE, "}", 6},
 	}
 
 	parser := New(*myScanner)
@@ -58,47 +57,46 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
+	ctx := ct.New(false, false, "test2_parser.golite")
+	myScanner := scanner.New(*ctx)
 
-	fileObj, _ := os.Open("test2_parser.golite")
-	reader := bufio.NewReader(fileObj)
-	myScanner := scanner.New(reader)
 	// The expected result struct represents the token stream for the input source
-	tokens := []ct.Token{
-		{ct.PACK, "package", 1},
-		{ct.ID, "main", 1},
-		{ct.SEMICOLON, ";", 1},
+	tokens := []tk.Token{
+		{tk.PACK, "package", 1},
+		{tk.ID, "main", 1},
+		{tk.SEMICOLON, ";", 1},
 
-		{ct.IMPORT, "import", 2},
-		{ct.QTDMARK, "\"", 2},
-		{ct.FMT, "fmt", 2},
-		{ct.QTDMARK, "\"", 2},
-		{ct.SEMICOLON, ";", 2},
+		{tk.IMPORT, "import", 2},
+		{tk.QTDMARK, "\"", 2},
+		{tk.FMT, "fmt", 2},
+		{tk.QTDMARK, "\"", 2},
+		{tk.SEMICOLON, ";", 2},
 
-		{ct.FUNC, "func", 3},
-		{ct.ID, "main", 3},
-		{ct.LPAREN, "(", 3},
-		{ct.RPAREN, ")", 3},
-		{ct.LBRACE, "{", 3},
+		{tk.FUNC, "func", 3},
+		{tk.ID, "main", 3},
+		{tk.LPAREN, "(", 3},
+		{tk.RPAREN, ")", 3},
+		{tk.LBRACE, "{", 3},
 
-		{ct.VAR, "var", 4},
-		{ct.ID, "b", 4},
-		{ct.INT, "bool", 4},
-		{ct.SEMICOLON, ";", 4},
+		{tk.VAR, "var", 4},
+		{tk.ID, "b", 4},
+		{tk.INT, "bool", 4},
+		{tk.SEMICOLON, ";", 4},
 
-		{ct.ID, "b", 5},
-		{ct.ASSIGN, "=", 5},
-		{ct.TRUE, "true", 5},
-		{ct.OR, "||", 5},
-		{ct.FALSE, "false", 5},
-		{ct.AND, "&&", 5},
-		{ct.LPAREN, "(", 5},
-		{ct.TRUE, "true", 5},
-		{ct.EQUAL, "==", 5},
-		{ct.TRUE, "true", 5},
-		{ct.RPAREN, ")", 5},
-		{ct.SEMICOLON, ";", 5},
+		{tk.ID, "b", 5},
+		{tk.ASSIGN, "=", 5},
+		{tk.TRUE, "true", 5},
+		{tk.OR, "||", 5},
+		{tk.FALSE, "false", 5},
+		{tk.AND, "&&", 5},
+		{tk.LPAREN, "(", 5},
+		{tk.TRUE, "true", 5},
+		{tk.EQUAL, "==", 5},
+		{tk.TRUE, "true", 5},
+		{tk.RPAREN, ")", 5},
+		{tk.SEMICOLON, ";", 5},
 
-		{ct.RBRACE, "}", 6},
+		{tk.RBRACE, "}", 6},
 	}
 
 	parser := New(*myScanner)
@@ -111,9 +109,8 @@ func Test2(t *testing.T) {
 }
 
 func Test3(t *testing.T) {
-	fileObj, _ := os.Open("test3_parser.golite")
-	reader := bufio.NewReader(fileObj)
-	myScanner := scanner.New(reader)
+	ctx := ct.New(false, false, "test3_parser.golite")
+	myScanner := scanner.New(*ctx)
 
 	parser := New(*myScanner)
 	ast := parser.Parse()
