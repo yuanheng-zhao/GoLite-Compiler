@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/ir"
 	st "proj/golite/symboltable"
 	"proj/golite/token"
 	"proj/golite/types"
@@ -25,6 +26,7 @@ type Expr interface {
 type Stmt interface {
 	Node
 	PerformSABuild([]string, *st.SymbolTable) []string // TO-DO
+	TranslateToILoc(symTable *st.SymbolTable) []ir.Instruction
 }
 
 /******* Stmt : Statement *******/
@@ -71,6 +73,11 @@ func (p *Program) TypeCheck(errors []string, symTable *st.SymbolTable) []string 
 	errors = p.Declarations.TypeCheck(errors, symTable)
 	errors = p.Functions.TypeCheck(errors, symTable)
 	return errors
+}
+func (p *Program) TranslateToILoc(symTable *st.SymbolTable) []ir.Instruction {
+	//instr := nil
+	//return instr
+	return nil
 }
 
 type Package struct {
