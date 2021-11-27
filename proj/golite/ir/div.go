@@ -16,12 +16,12 @@ func NewDiv(target int,sourceReg1 int, sourceReg2 int) *Div	 {
 }
 
 func (instr *Div) GetTargets() []int {
-	targets := make([]int, 1)
+	targets := []int{}
 	targets = append(targets, instr.target)
 	return targets
 }
 func (instr *Div) GetSources() []int {
-	sources := make([]int, 2)
+	sources := []int{}
 	sources = append(sources, instr.sourceReg1, instr.sourceReg2)
 	return sources
 }

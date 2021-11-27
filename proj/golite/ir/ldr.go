@@ -18,21 +18,17 @@ func NewLdr(target int, sourceReg int, operand int, globalVar string, opty Opera
 }
 
 func (instr *Ldr) GetTargets() []int {
-	targets := make([]int, 1)
+	targets := []int{}
 	targets = append(targets, instr.target)
 	return targets
 }
 
 func (instr *Ldr) GetSources() []int {
-	var sources []int
+	sources := []int{}
 	if instr.opty == REGISTER {
-		sources = make([]int, 2)
 		sources = append(sources, instr.sourceReg, instr.operand)
 	} else if instr.opty == IMMEDIATE || instr.opty == ONEOPERAND{
-		sources = make([]int, 1)
 		sources = append(sources, instr.sourceReg)
-	} else {
-		return nil
 	}
 	return sources
 }

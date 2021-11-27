@@ -17,18 +17,16 @@ func NewSub(target int,sourceReg int, operand int, opty OperandTy ) *Sub {
 }
 
 func (instr *Sub) GetTargets() []int {
-	targets := make([]int, 1)
+	targets := []int{}
 	targets = append(targets, instr.target)
 	return targets
 }
 
 func (instr *Sub) GetSources() []int {
-	var sources []int
+	sources := []int{}
 	if instr.opty == REGISTER {
-		sources = make([]int, 2)
 		sources = append(sources, instr.sourceReg, instr.operand)
 	} else {
-		sources = make([]int, 1)
 		sources = append(sources, instr.sourceReg)
 	}
 	return sources

@@ -15,15 +15,16 @@ func NewCmp(sourceReg int, operand int, opty OperandTy) *Cmp {
 	return &Cmp{sourceReg, operand, opty}
 }
 
-func (instr *Cmp) GetTargets() []int { return nil}
+func (instr *Cmp) GetTargets() []int {
+	targets := []int{}
+	return targets
+}
 
 func (instr *Cmp) GetSources() []int {
-	var sources []int
+	sources := []int{}
 	if instr.opty == REGISTER {
-		sources = make([]int, 2)
 		sources = append(sources, instr.sourceReg, instr.operand)
 	} else if instr.opty == IMMEDIATE {
-		sources = make([]int, 1)
 		sources = append(sources, instr.sourceReg)
 	}
 	return sources

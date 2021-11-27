@@ -16,12 +16,12 @@ func NewMul(target int,sourceReg1 int, sourceReg2 int) *Mul {
 }
 
 func (instr *Mul) GetTargets() []int {
-	targets := make([]int, 1)
+	targets := []int{}
 	targets = append(targets, instr.target)
 	return targets
 }
 func (instr *Mul) GetSources() []int {
-	sources := make([]int, 2)
+	sources := []int{}
 	sources = append(sources, instr.sourceReg1, instr.sourceReg2)
 	return sources
 }

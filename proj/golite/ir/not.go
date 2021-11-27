@@ -7,29 +7,28 @@ import (
 
 type Not struct{
 	target    int        // The target register for the instruction
-	sourceReg int        // The first source register of the instruction
 	operand   int        // The operand either register or constant
 	opty   OperandTy     // The type for the operand (REGISTER, IMMEDIATE)
 }
 
-func NewNot(target int,sourceReg int, operand int, opty OperandTy ) *Not {
-	return &Not{target,sourceReg,operand,opty}
+func NewNot(target int, operand int, opty OperandTy ) *Not {
+	return &Not{target,operand,opty}
 }
 
 func (instr *Not) GetTargets() []int {
-	targets := make([]int, 1)
+	targets := []int{}
 	targets = append(targets, instr.target)
 	return targets
 }
 
 func (instr *Not) GetSources() []int {
 
+	sources := []int{}
 	if instr.opty != IMMEDIATE {
-		sources := make([]int, 1)
-		sources = append(sources, instr.sourceReg)
+		sources = append(sources, instr.operand)
 		return sources
 	}
-	return nil
+	return sources
 }
 
 func (instr *Not) GetImmediate() *int {
@@ -61,13 +60,12 @@ func (instr *Not) String() string {
 
 	if instr.opty == IMMEDIATE {
 		prefix = "#"
-		operand2   = fmt.Sprintf("%v%v",prefix, instr.operand)
 	} else {
 		prefix = "r"
-		operand2   = fmt.Sprintf("%v%v",prefix, instr.sourceReg)
 	}
+	operand2   = fmt.Sprintf("%v%v",prefix, instr.operand)
 
-	out.WriteString(fmt.Sprintf("sub %s,%s,%s",targetReg,operand2))
+	out.WriteString(fmt.Sprintf("not %s,%s",targetReg,operand2))
 
 	return out.String()
 

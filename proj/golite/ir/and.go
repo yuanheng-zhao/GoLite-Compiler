@@ -17,18 +17,16 @@ func NewAnd(target int,sourceReg int, operand int, opty OperandTy ) *And {
 }
 
 func (instr *And) GetTargets() []int {
-	targets := make([]int, 1)
+	targets := []int{}
 	targets = append(targets, instr.target)
 	return targets
 }
 
 func (instr *And) GetSources() []int {
-	var sources []int
-	if instr.opty != IMMEDIATE {
-		sources = make([]int, 2)
+	sources := []int{}
+	if instr.opty == REGISTER {
 		sources = append(sources, instr.sourceReg, instr.operand)
-	} else {
-		sources = make([]int, 1)
+	} else if instr.opty == IMMEDIATE{
 		sources = append(sources, instr.sourceReg)
 	}
 	return sources

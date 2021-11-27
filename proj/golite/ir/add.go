@@ -19,18 +19,16 @@ func NewAdd(target int,sourceReg int, operand int, opty OperandTy ) *Add {
 }
 
 func (instr *Add) GetTargets() []int {
-	targets := make([]int, 1)
+	targets := []int{}
 	targets = append(targets, instr.target)
 	return targets
 }
 
 func (instr *Add) GetSources() []int {
-	var sources []int
+	sources := []int{}
 	if instr.opty == REGISTER {
-		sources = make([]int, 2)
 		sources = append(sources, instr.sourceReg, instr.operand)
 	} else {
-		sources = make([]int, 1)
 		sources = append(sources, instr.sourceReg)
 	}
 	return sources
