@@ -207,7 +207,7 @@ func (td *TypeDeclaration) PerformSABuild(errors []string, symTable *st.SymbolTa
 	td.st = scopeSymTable
 
 	if entry := symTable.Contains(structName); entry != nil {
-		errors = append(errors, fmt.Sprintf("#{td.Token.LineNum}: struct #{structName} already declared"))
+		errors = append(errors, fmt.Sprintf("[%v]: struct %v already declared", td.Token.LineNum, structName))
 	} else {
 		var entry st.Entry
 		entry = st.NewStructEntry(td.st)
@@ -283,7 +283,7 @@ func (decl *Decl) PerformSABuild(errors []string, symTable *st.SymbolTable) []st
 	// objective: find duplicate declarations in functions / structures
 	varName := decl.Ident.TokenLiteral()
 	if entry := symTable.Contains(varName); entry != nil {
-		errors = append(errors, fmt.Sprintf("#{decl.Token.LineNum}: variable #{varName} already declared"))
+		errors = append(errors, fmt.Sprintf("[%v]: variable %v already declared", decl.Token.LineNum, varName))
 	} else {
 		var entry st.Entry
 		entry = st.NewVarEntry()
@@ -405,7 +405,7 @@ func (ids *Ids) PerformSABuild(errors []string, symTable *st.SymbolTable) []stri
 	for _, id := range ids.Idents {
 		varName := id.TokenLiteral()
 		if entry := symTable.Contains(varName); entry != nil {
-			errors = append(errors, fmt.Sprintf("#{id.Token.LineNum}: variable #{varName} already declared"))
+			errors = append(errors, fmt.Sprintf("[%v]: variable [%v] already declared", id.Token.LineNum, varName))
 		} else {
 			var entry st.Entry
 			entry = st.NewVarEntry()
@@ -492,7 +492,7 @@ func (f *Function) PerformSABuild(errors []string, symTable *st.SymbolTable) []s
 	scopeSymTable := st.New(symTable, funcName)
 	f.st = scopeSymTable
 	if entry := symTable.Contains(funcName); entry != nil {
-		errors = append(errors, fmt.Sprintf("#{f.Token.LineNum}: function #{funcName} has been declared"))
+		errors = append(errors, fmt.Sprintf("[%v]: function [%v] has been declared", f.Token.LineNum, funcName))
 	} else {
 		var entry st.Entry
 		entry = st.NewFuncEntry(f.ReturnType.GetType(symTable), f.st)
@@ -680,19 +680,20 @@ func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 		leftType := a.Lvalue.GetType(symTable)
 		rightType := a.Expr.GetType(symTable)
 		if leftType != rightType {
-			errors = append(errors, fmt.Sprintf("#{a.Token.LineNum}: type mismatch"))
+			errors = append(errors, fmt.Sprintf("[%v]: type mismatch: Cannot assign %v (Type %v) to %v (Type %v)",
+				a.Token.LineNum, a.Expr.String(), rightType.GetName(), a.Lvalue.String(), leftType.GetName()))
 			return errors
 		}
 		if leftType != types.IntTySig && leftType != types.BoolTySig {
-			errors = append(errors, fmt.Sprintf("[#{a.Token.LineNum}]: #{a.Lvalue.String()} not assignable"))
+			errors = append(errors, fmt.Sprintf("[%v]: %v is not assignable", a.Token.LineNum, a.Lvalue.String()))
 			return errors
 		}
 		if leftType == types.IntTySig && a.Lvalue.Token.Type == token.NUM {
-			errors = append(errors, fmt.Sprintf("[#{a.Token.LineNum}]: #{a.Lvalue.String()} not assignable"))
+			errors = append(errors, fmt.Sprintf("[%v]: %v is not assignable", a.Token.LineNum, a.Lvalue.String()))
 			return errors
 		}
 		if leftType == types.BoolTySig && (a.Lvalue.Token.Type == token.TRUE || a.Lvalue.Token.Type == token.FALSE) {
-			errors = append(errors, fmt.Sprintf("[#{a.Token.LineNum}]: #{a.Lvalue.String()} not assignable"))
+			errors = append(errors, fmt.Sprintf("[%v]: %v is not assignable", a.Token.LineNum, a.Lvalue.String()))
 			return errors
 		}
 	}
@@ -731,7 +732,7 @@ func (r *Read) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	varName := r.Ident.TokenLiteral()
 	entry := symTable.Contains(varName)
 	if entry == nil {
-		errors = append(errors, fmt.Sprintf("#{r.Token.LineNum}: variable #{varName} has not been declared"))
+		errors = append(errors, fmt.Sprintf("[%v]: variable %v has not been declared", r.Token.LineNum, varName))
 	}
 	return errors
 }
@@ -768,7 +769,7 @@ func (p *Print) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	varName := p.Ident.TokenLiteral()
 	entry := symTable.Contains(varName)
 	if entry == nil {
-		errors = append(errors, fmt.Sprintf("#{p.Token.LineNum}: variable #{varName} has not been declared"))
+		errors = append(errors, fmt.Sprintf("[%v]: variable %v has not been declared", p.Token.LineNum, varName))
 	}
 	return errors
 }
@@ -815,7 +816,7 @@ func (cond *Conditional) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	errors = cond.ElseBlock.TypeCheck(errors, symTable)
 	if len(errors) == 0 {
 		if condType != types.BoolTySig {
-			errors = append(errors, fmt.Sprintf("#{cond.Token.LineNum}: boolean expression is desired"))
+			errors = append(errors, fmt.Sprintf("[%v]: boolean expression is desired, received %v Type %v", cond.Token.LineNum, cond.Expr.String(), condType.GetName()))
 		}
 	}
 	return errors
@@ -856,7 +857,8 @@ func (lp *Loop) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	errors = lp.Block.TypeCheck(errors, symTable)
 	if len(errors) == 0 {
 		if condType != types.BoolTySig {
-			errors = append(errors, fmt.Sprintf("#{lp.Token.LineNum}: boolean expression is desired"))
+			errors = append(errors, fmt.Sprintf("[%v]: boolean expression is desired, received %v Type %v",
+				lp.Token.LineNum, lp.Expr.String(), condType.GetName()))
 		}
 	}
 	return errors
@@ -896,7 +898,7 @@ func (ret *Return) TypeCheck(errors []string, symTable *st.SymbolTable) []string
 	actRetType := ret.Expr.GetType(symTable)
 	if len(errors) == 0 {
 		if actRetType != decRetType {
-			errors = append(errors, fmt.Sprintf("#{ret.Token.LineNum}: return type expected #{decRetType}, #{actRetType} found"))
+			errors = append(errors, fmt.Sprintf("[%v]: return type expected %v, found %v", ret.Token.LineNum, decRetType, actRetType))
 		}
 	}
 	return errors
@@ -932,7 +934,7 @@ func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	funcName := invoc.Ident.TokenLiteral()
 	entry := symTable.Contains(funcName)
 	if entry == nil {
-		errors = append(errors, fmt.Sprintf("#{invoc.Token.LineNum}: function #{funcName} has not been defined"))
+		errors = append(errors, fmt.Sprintf("[%v]: function %v has not been defined", invoc.Token.LineNum, funcName))
 	} else {
 		symTable = entry.GetScopeST()
 		errors = invoc.Args.TypeCheck(errors, symTable)
@@ -1071,11 +1073,13 @@ func (args *Arguments) GetType(symTable *st.SymbolTable) types.Type {
 func (args *Arguments) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// used as parameters for calling a function
 	expectedTys := symTable.ScopeParamTys
+	paramNames := symTable.ScopeParamNames
 	for idx, expr := range args.Exprs {
 		errors = expr.TypeCheck(errors, symTable)
 		givenParamTy := expr.GetType(symTable)
 		if givenParamTy != expectedTys[idx] {
-			errors = append(errors, fmt.Sprintf("Expected paramter type #{expectedTys[idx}; given parameter type #{givenParamTy} #{args.Exprs[idx]}"))
+			errors = append(errors, fmt.Sprintf("[%v]: Expected paramter %v type %v; given parameter %v type %v #{args.Exprs[idx]}",
+				args.Token.LineNum, paramNames[idx], expectedTys[idx], expr.String(), givenParamTy))
 		}
 	}
 	return errors
@@ -1132,9 +1136,8 @@ func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
 	return entry.GetEntryType()
 }
 func (lv *LValue) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
-	errors = lv.TypeCheck(errors, symTable)
 	if lv.GetType(symTable) == types.UnknownTySig {
-		errors = append(errors, fmt.Sprintf("#{lv.Token.LineNum}: (LValue) inner field has not been defined"))
+		errors = append(errors, fmt.Sprintf("[%v]: (LValue) inner field has not been defined", lv.Token.LineNum))
 	}
 	return errors
 }
@@ -1177,7 +1180,8 @@ func (exp *Expression) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 	if len(exp.Rights) != 0 {
 		// OR operation, needs bool types on both sides
 		if leftMostTy != types.BoolTySig {
-			errors = append(errors, fmt.Sprintf("[#{exp.Token.LineNum}]: the leftmost expression expected bool type but receives #{leftMostTy.GetName()}"))
+			errors = append(errors, fmt.Sprintf("[%v]: (Expression) expected bool type, found %v (%v)",
+				exp.Token.LineNum, leftMostTy.GetName(), exp.Left.String()))
 			return errors
 		}
 	}
@@ -1186,7 +1190,8 @@ func (exp *Expression) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 		errors = curr.TypeCheck(errors, symTable)
 		currTy := curr.GetType(symTable)
 		if currTy != leftMostTy {
-			errors = append(errors, fmt.Sprintf("[#{exp.Token.LineNum}]: expected #{lefType.GetName()}, #{currTy.GetName()} found."))
+			errors = append(errors, fmt.Sprintf("[%v]: (Expression) expected %v type, found %v (%v)",
+				exp.Token.LineNum, leftMostTy.GetName(), currTy.GetName(), curr.String()))
 			break
 		}
 	}
@@ -1231,7 +1236,8 @@ func (bt *BoolTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []strin
 	if len(bt.Rights) != 0 {
 		// OR operation, needs bool types on both sides
 		if leftMostTy != types.BoolTySig {
-			errors = append(errors, fmt.Sprintf("[#{bt.Token.LineNum}]: the leftmost expression expected bool type but receives #{leftMostTy.GetName()}"))
+			errors = append(errors, fmt.Sprintf("[%v]: (BoolTerm) expected bool type, found %v (%v)",
+				bt.Token.LineNum, leftMostTy.GetName(), bt.Left.String()))
 			return errors
 		}
 	}
@@ -1240,7 +1246,8 @@ func (bt *BoolTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []strin
 		errors = curr.TypeCheck(errors, symTable)
 		currTy := curr.GetType(symTable)
 		if currTy != leftMostTy {
-			errors = append(errors, fmt.Sprintf("[#{bt.Token.LineNum}]: expected #{lefType.GetName()}, #{currTy.GetName()} found."))
+			errors = append(errors, fmt.Sprintf("[%v]: (BoolTerm) expected %v type, found %v (%v)",
+				bt.Token.LineNum, leftMostTy.GetName(), currTy.GetName(), curr.String()))
 			break
 		}
 	}
@@ -1331,14 +1338,16 @@ func (rt *RelationTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []s
 	// with + or - operations, every Term should be int type
 	leftMostTy := rt.Left.GetType(symTable)
 	if leftMostTy != types.IntTySig {
-		errors = append(errors, fmt.Sprintf("#{rt.Token.LineNum}: #{rt.Left.String()} is type of #{leftMostTy.GetName()} but not int"))
+		errors = append(errors, fmt.Sprintf("[%v]: (RelationTerm) expected int, found %v (%v)",
+			rt.Token.LineNum, leftMostTy.GetName(), rt.Left.String()))
 		return errors
 	}
 	for _, rTerm := range rt.Rights {
 		errors = rTerm.TypeCheck(errors, symTable)
 		currTy := rTerm.GetType(symTable)
 		if currTy != types.IntTySig {
-			errors = append(errors, fmt.Sprintf("#{rTerm.Token.LineNum}: #{rTerm.String()} is type of #{currTy.GetName()} but not int"))
+			errors = append(errors, fmt.Sprintf("[%v]: (RelationTerm) expected int, found %v (%v)",
+				rTerm.Token.LineNum, currTy.GetName(), rTerm.String()))
 			return errors
 		}
 	}
@@ -1387,14 +1396,16 @@ func (st *SimpleTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []str
 	// with + or - operations, every Term should be int type
 	leftMostTy := st.Left.GetType(symTable)
 	if leftMostTy != types.IntTySig {
-		errors = append(errors, fmt.Sprintf("#{st.Token.LineNum}: #{st.Left.String()} is type of #{leftMostTy.GetName()} but not int"))
+		errors = append(errors, fmt.Sprintf("[%v]: (SimpleTerm) expected int, found %v (%v)",
+			st.Token.LineNum, leftMostTy.GetName(), st.Left.String()))
 		return errors
 	}
 	for _, rTerm := range st.Rights {
 		errors = rTerm.TypeCheck(errors, symTable)
 		currTy := rTerm.GetType(symTable)
 		if currTy != types.IntTySig {
-			errors = append(errors, fmt.Sprintf("#{rTerm.Token.LineNum}: #{rTerm.String()} is type of #{currTy.GetName()} but not int"))
+			errors = append(errors, fmt.Sprintf("[%v]: (SimpleTerm) expected int, found %v (%v)",
+				rTerm.Token.LineNum, currTy.GetName(), rTerm.String()))
 			return errors
 		}
 	}
@@ -1443,14 +1454,16 @@ func (t *Term) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// with * or / operations, every UnaryTerm should be int type
 	leftMostTy := t.Left.GetType(symTable)
 	if leftMostTy != types.IntTySig {
-		errors = append(errors, fmt.Sprintf("#{t.Token.LineNum}: #{t.Left.String()} is type of #{leftMostTy.GetName()} but not int"))
+		errors = append(errors, fmt.Sprintf("[%v]: (Term) expected int, found %v (%v)",
+			t.Token.LineNum, leftMostTy.GetName(), t.Left.String()))
 		return errors
 	}
 	for _, rTerm := range t.Rights {
 		errors = rTerm.TypeCheck(errors, symTable)
 		currTy := rTerm.GetType(symTable)
 		if currTy != types.IntTySig {
-			errors = append(errors, fmt.Sprintf("#{rTerm.Token.LineNum}: #{rTerm.String()} is type of #{currTy.GetName()} but not int"))
+			errors = append(errors, fmt.Sprintf("[%v]: (Term) expected int, found %v (%v)",
+				rTerm.Token.LineNum, currTy.GetName(), rTerm.String()))
 			return errors
 		}
 	}
@@ -1495,7 +1508,7 @@ func (ut *UnaryTerm) GetType(symTable *st.SymbolTable) types.Type {
 func (ut *UnaryTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	errors = ut.SelectorTerm.TypeCheck(errors, symTable)
 	if ut.GetType(symTable) == types.UnknownTySig {
-		errors = append(errors, fmt.Sprintf("#{ut.Token.LineNum}: (UnaryTerm) inner field has not been defined"))
+		errors = append(errors, fmt.Sprintf("[%v]: (UnaryTerm) inner field has not been defined", ut.Token.LineNum))
 	}
 	return errors
 }
@@ -1557,9 +1570,10 @@ func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type {
 	return types.UnknownTySig
 }
 func (selt *SelectorTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
-	errors = selt.TypeCheck(errors, symTable)
+	errors = selt.Fact.TypeCheck(errors, symTable)
 	if selt.GetType(symTable) == types.UnknownTySig {
-		errors = append(errors, fmt.Sprintf("#{selt.Token.LineNum}: (SelectorTerm) inner field has not been defined"))
+		errors = append(errors, fmt.Sprintf("[%v]: (SelectorTerm) inner field has not been defined", selt.Token.LineNum))
+		return errors
 	}
 	return errors
 }
@@ -1645,7 +1659,7 @@ func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 	funcName := ie.Ident.TokenLiteral()
 	entry := symTable.Contains(funcName)
 	if entry == nil {
-		errors = append(errors, fmt.Sprintf("#{ie.Token.LineNum}: function #{funcName} has not been defined"))
+		errors = append(errors, fmt.Sprintf("[%v]: function %v has not been defined", ie.Token.LineNum, funcName))
 	} else {
 		symTable = entry.GetScopeST()
 		errors = ie.InnerArgs.TypeCheck(errors, symTable)
@@ -1742,9 +1756,8 @@ func (idl *IdentLiteral) GetType(symTable *st.SymbolTable) types.Type {
 	return entry.GetEntryType()
 }
 func (idl *IdentLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
-	idlTy := idl.GetType(symTable)
-	if idlTy == types.UnknownTySig {
-		errors = append(errors, fmt.Sprintf("[#{idl.Token.LineNum}]: #{idl.Id} has not been defined."))
+	if idl.GetType(symTable) == types.UnknownTySig {
+		errors = append(errors, fmt.Sprintf("[%v]: %v has not been defined.", idl.Token.LineNum, idl.Id))
 	}
 	return errors
 }
