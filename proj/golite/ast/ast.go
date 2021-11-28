@@ -26,7 +26,7 @@ type Expr interface {
 type Stmt interface {
 	Node
 	PerformSABuild([]string, *st.SymbolTable) []string // TO-DO
-	TranslateToILoc(symTable *st.SymbolTable) []ir.Instruction
+	//TranslateToILoc(symTable *st.SymbolTable) []ir.Instruction
 }
 
 /******* Stmt : Statement *******/
@@ -445,7 +445,6 @@ func (fs *Functions) PerformSABuild(errors []string, symTable *st.SymbolTable) [
 	return errors
 }
 func (fs *Functions) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
-	// objective: none
 	for _, fun := range fs.Functions {
 		errors = fun.TypeCheck(errors, symTable)
 	}
@@ -506,6 +505,8 @@ func (f *Function) PerformSABuild(errors []string, symTable *st.SymbolTable) []s
 func (f *Function) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// Objective: add parameters, return type to function symbol table and entry in the outer symbol table
 	// parameters are added to both inner symbol table and function signature in the outer symbol table by Decl invoked next line
+	currScopeSt := symTable.Contains(f.Ident.TokenLiteral()).GetScopeST()
+	f.st = currScopeSt
 	errors = f.Parameters.TypeCheck(errors, f.st)
 	errors = f.Declarations.TypeCheck(errors, f.st)
 	errors = f.Statements.TypeCheck(errors, f.st)
@@ -1031,7 +1032,7 @@ func (rt *ReturnType) String() string {
 	return out.String()
 }
 func (rt *ReturnType) GetType(symTable *st.SymbolTable) types.Type {
-	if rt.Ty.TokenLiteral() == "" {
+	if rt.Ty.TypeLiteral == "" {
 		return types.VoidTySig
 	} else {
 		return rt.Ty.GetType(symTable)
@@ -1119,6 +1120,9 @@ func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
 		} else {
 			break
 		}
+	}
+	if lv.Idents == nil {
+		return entry.GetEntryType()
 	}
 	// here entry is the entry of the first id in Idents
 	symTable = entry.GetScopeST()
@@ -1508,7 +1512,7 @@ func (ut *UnaryTerm) GetType(symTable *st.SymbolTable) types.Type {
 func (ut *UnaryTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	errors = ut.SelectorTerm.TypeCheck(errors, symTable)
 	if ut.GetType(symTable) == types.UnknownTySig {
-		errors = append(errors, fmt.Sprintf("[%v]: (UnaryTerm) inner field has not been defined", ut.Token.LineNum))
+		errors = append(errors, fmt.Sprintf("[%v]: (UnaryTerm) Unkown type", ut.Token.LineNum))
 	}
 	return errors
 }
@@ -1552,6 +1556,9 @@ func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type {
 				break
 			}
 		}
+		if selt.Idents == nil {
+			return entry.GetEntryType()
+		}
 		// here entry is the entry of the first id in Idents
 		symTable = entry.GetScopeST()
 		remaining := selt.Idents[1:]
@@ -1572,7 +1579,7 @@ func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type {
 func (selt *SelectorTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	errors = selt.Fact.TypeCheck(errors, symTable)
 	if selt.GetType(symTable) == types.UnknownTySig {
-		errors = append(errors, fmt.Sprintf("[%v]: (SelectorTerm) inner field has not been defined", selt.Token.LineNum))
+		errors = append(errors, fmt.Sprintf("[%v]: (SelectorTerm) Unknown type", selt.Fact.Token.LineNum))
 		return errors
 	}
 	return errors

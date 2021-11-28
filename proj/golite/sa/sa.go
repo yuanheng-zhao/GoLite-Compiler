@@ -1,13 +1,27 @@
 package sa
 
 import (
+	"flag"
+	"fmt"
 	"proj/golite/ast"
 	st "proj/golite/symboltable"
 )
 
 // return true if there exists any error
+//func reportErrors(errors []string) bool {
+//	return !(len(errors) == 0)
+//}
+
 func reportErrors(errors []string) bool {
-	return !(len(errors) == 0)
+	// return true if there exists any error
+	if len(errors) > 0 {
+		for _, err := range errors {
+			out := flag.CommandLine.Output()
+			fmt.Fprintf(out, "semantic error: %s}\n", err)
+		}
+		return true
+	}
+	return false
 }
 
 func PerformSA(program *ast.Program) *st.SymbolTable {
@@ -22,8 +36,8 @@ func PerformSA(program *ast.Program) *st.SymbolTable {
 	if !reportErrors(errors) {
 		// second perform type checking
 		errors := make([]string, 0)
-		//errors = program.TypeCheck(errors, globalST)
-		if !reportErrors(errors) { // finally no error
+		errors = program.TypeCheck(errors, globalST)
+		if !reportErrors(errors) { // finally, no error
 			return globalST
 		}
 	}

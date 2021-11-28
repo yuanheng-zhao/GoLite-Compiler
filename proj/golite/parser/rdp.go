@@ -760,6 +760,7 @@ func lValue(p *Parser) *ast.LValue {
 
 func expression(p *Parser) *ast.Expression {
 	var bts []ast.BoolTerm
+	currTok := p.currToken
 	btLeft := boolTerm(p)
 	if btLeft == nil {
 		return nil
@@ -777,12 +778,14 @@ func expression(p *Parser) *ast.Expression {
 	}
 
 	node := ast.NewExpression(btLeft, bts)
+	node.Token = &currTok
 	return node
 }
 
 func boolTerm(p *Parser) *ast.BoolTerm {
 	var ets []ast.EqualTerm
 	etLeft := equalTerm(p)
+	currTok := p.currToken
 
 	if etLeft == nil {
 		return nil
@@ -800,6 +803,7 @@ func boolTerm(p *Parser) *ast.BoolTerm {
 	}
 
 	node := ast.NewBoolTerm(etLeft, ets)
+	node.Token = &currTok
 	return node
 }
 
@@ -808,6 +812,7 @@ func equalTerm(p *Parser) *ast.EqualTerm {
 	var rts []ast.RelationTerm
 	var eqTok ct.Token
 	var match bool
+	currTok := p.currToken
 
 	rtLeft := relationTerm(p)
 	if rtLeft == nil {
@@ -830,6 +835,7 @@ func equalTerm(p *Parser) *ast.EqualTerm {
 	}
 
 	node := ast.NewEqualTerm(rtLeft, eqOps, rts)
+	node.Token = &currTok
 	return node
 }
 
@@ -838,6 +844,7 @@ func relationTerm(p *Parser) *ast.RelationTerm {
 	var sts []ast.SimpleTerm
 	var rlTok ct.Token
 	var match bool
+	currTok := p.currToken
 
 	stLeft := simpleTerm(p)
 	if stLeft == nil {
@@ -864,6 +871,7 @@ func relationTerm(p *Parser) *ast.RelationTerm {
 	}
 
 	node := ast.NewRelationTerm(stLeft, rlOps, sts)
+	node.Token = &currTok
 	return node
 }
 
@@ -872,6 +880,7 @@ func simpleTerm(p *Parser) *ast.SimpleTerm {
 	var tms []ast.Term
 	var stTok ct.Token
 	var match bool
+	currTok := p.currToken
 
 	termLeft := term(p)
 	if termLeft == nil {
@@ -893,6 +902,7 @@ func simpleTerm(p *Parser) *ast.SimpleTerm {
 	}
 
 	node := ast.NewSimpleTerm(termLeft, stOps, tms)
+	node.Token = &currTok
 	return node
 }
 
@@ -901,6 +911,7 @@ func term(p *Parser) *ast.Term {
 	var uts []ast.UnaryTerm
 	var tmTok ct.Token
 	var match bool
+	currTok := p.currToken
 
 	utLeft := unaryTerm(p)
 	if utLeft == nil {
@@ -922,6 +933,7 @@ func term(p *Parser) *ast.Term {
 	}
 
 	node := ast.NewTerm(utLeft, tmOps, uts)
+	node.Token = &currTok // TO-DO : bind token, delete or not
 	return node
 }
 
@@ -929,6 +941,7 @@ func unaryTerm(p *Parser) *ast.UnaryTerm {
 	op := ""
 	var uniOp ct.Token
 	var match bool
+	currTok := p.currToken
 	if uniOp, match = p.match(ct.NOT); match {
 		op = uniOp.Literal
 	} else if uniOp, match = p.match(ct.MINUS); match {
@@ -939,6 +952,7 @@ func unaryTerm(p *Parser) *ast.UnaryTerm {
 		return nil
 	}
 	node := ast.NewUnaryTerm(op, selTok)
+	node.Token = &currTok // TO-DO : bind with token
 
 	if op != "" {
 		node.Token = &uniOp
@@ -973,14 +987,15 @@ func selectorTerm(p *Parser) *ast.SelectorTerm {
 
 func factor(p *Parser) *ast.Factor {
 	var node ast.Expr
+	currTok := p.currToken
 
 	if numTok, match := p.match(ct.NUM); match {
 		val, _ := strconv.ParseInt(numTok.Literal, 10, 64)
 		node = &ast.IntLiteral{Token: &numTok, Value: val}
 	} else if truTok, match := p.match(ct.TRUE); match {
-		node = &ast.BoolLiteral{Token: &truTok, Value: true }
+		node = &ast.BoolLiteral{Token: &truTok, Value: true}
 	} else if flsTok, match := p.match(ct.FALSE); match {
-		node = &ast.BoolLiteral{Token: &flsTok, Value: false }
+		node = &ast.BoolLiteral{Token: &flsTok, Value: false}
 	} else if nilTok, match := p.match(ct.NIL); match {
 		node = &ast.NilNode{Token: &nilTok}
 	} else if identTok, match := p.match(ct.ID); match {
@@ -1001,8 +1016,11 @@ func factor(p *Parser) *ast.Factor {
 	}
 
 	if node != nil {
-		//return &node
-		return ast.NewFactor(&node)
+		//return ast.NewFactor(&node)
+		// TO-DO : bind a token to Factor?
+		factor := ast.NewFactor(&node)
+		factor.Token = &currTok
+		return factor
 	} else {
 		return nil
 	}
