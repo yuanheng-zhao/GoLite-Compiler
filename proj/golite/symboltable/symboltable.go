@@ -1,6 +1,9 @@
 package symboltable
 
-import "proj/golite/types"
+import (
+	"proj/golite/ir"
+	"proj/golite/types"
+)
 
 type SymbolTable struct {
 	Parent          *SymbolTable
@@ -32,15 +35,17 @@ type Entry interface {
 	GetEntryType() types.Type
 	GetScopeST() *SymbolTable
 	GetReturnTy() types.Type // Only implement for funcEntry
+	GetRegId() int
 }
 
 type VarEntry struct {
 	ty    types.Type
 	value string
+	regId int
 }
 
 func NewVarEntry() *VarEntry {
-	return &VarEntry{types.UnknownTySig, ""}
+	return &VarEntry{types.UnknownTySig, "", ir.NewRegister()}
 }
 func (ve *VarEntry) GetEntryType() types.Type {
 	return ve.ty
@@ -57,6 +62,9 @@ func (ve *VarEntry) SetValue(s string) {
 func (ve *VarEntry) GetReturnTy() types.Type {
 	// dummy one, never use
 	return types.UnknownTySig
+}
+func (ve *VarEntry) GetRegId() int {
+	return ve.regId
 }
 
 type FuncEntry struct {
@@ -79,6 +87,7 @@ func (fe *FuncEntry) SetValue(s string)    {}
 func (fe *FuncEntry) GetReturnTy() types.Type {
 	return fe.returnType
 }
+func (fe *FuncEntry) GetRegId() int { return -1 }
 
 type StructEntry struct {
 	ty      types.Type
@@ -100,3 +109,4 @@ func (se *StructEntry) GetReturnTy() types.Type {
 	// dummy one. never use
 	return types.UnknownTySig
 }
+func (se *StructEntry) GetRegId() int { return -1 }
