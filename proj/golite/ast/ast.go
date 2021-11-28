@@ -14,6 +14,7 @@ type Node interface {
 	TokenLiteral() string
 	String() string
 	TypeCheck([]string, *st.SymbolTable) []string // TO-DO
+	TranslateToILoc(symTable *st.SymbolTable) []ir.Instruction
 }
 
 // Expr All expression nodes implement this interface
@@ -26,7 +27,6 @@ type Expr interface {
 type Stmt interface {
 	Node
 	PerformSABuild([]string, *st.SymbolTable) []string // TO-DO
-	//TranslateToILoc(symTable *st.SymbolTable) []ir.Instruction
 }
 
 /******* Stmt : Statement *******/
