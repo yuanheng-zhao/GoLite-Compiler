@@ -14,13 +14,13 @@ func NewBranch(flagVal ApsrFlag, label string) *Branch {
 	return &Branch{flagVal, label}
 }
 
-func (instr *Branch) GetTargets() []int { return nil }
+func (instr *Branch) GetTargets() []int { return []int{} }
 
-func (instr *Branch) GetSources() []int { return nil }
+func (instr *Branch) GetSources() []int { return []int{} }
 
 func (instr *Branch) GetImmediate() *int { return nil }
 
-func (instr *Branch) GetSourceString() string { return ""}
+func (instr *Branch) GetSourceString() string { return "" }
 
 func (instr *Branch) GetLabel() string { return instr.label }
 
