@@ -13,20 +13,21 @@ import (
 type Node interface {
 	TokenLiteral() string
 	String() string
-	TypeCheck([]string, *st.SymbolTable) []string // TO-DO
+	TypeCheck([]string, *st.SymbolTable) []string
 	TranslateToILoc([]ir.Instruction, *st.SymbolTable) []ir.Instruction
 }
 
 // Expr All expression nodes implement this interface
 type Expr interface {
 	Node
-	GetType(*st.SymbolTable) types.Type // TO-DO
+	GetType(*st.SymbolTable) types.Type
+	GetTargetReg() int // for Factor.TranslateToILoc to retrieve
 }
 
 // Stmt All statement nodes implement this interface
 type Stmt interface {
 	Node
-	PerformSABuild([]string, *st.SymbolTable) []string // TO-DO
+	PerformSABuild([]string, *st.SymbolTable) []string
 }
 
 // Func prog, funcs, func nodes need to implement this interface
@@ -1305,6 +1306,9 @@ func (t *Type) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 func (t *Type) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	return instrcs
 }
+func (t *Type) GetTargetReg() int {
+	return -1 // dummy one, no usage
+}
 
 type ReturnType struct {
 	Token *token.Token
@@ -1332,6 +1336,12 @@ func (rt *ReturnType) GetType(symTable *st.SymbolTable) types.Type {
 func (rt *ReturnType) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	errors = rt.Ty.TypeCheck(errors, symTable)
 	return errors
+}
+func (rt *ReturnType) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
+}
+func (rt *ReturnType) GetTargetReg() int {
+	return -1 // dummy one, no usage
 }
 
 type Arguments struct {
@@ -1387,6 +1397,9 @@ func (args *Arguments) TranslateToILoc(instructions []ir.Instruction, symTable *
 		exp.TranslateToILoc(instructions, symTable)
 	}
 	return instructions
+}
+func (args *Arguments) GetTargetReg() int {
+	return args.targetReg
 }
 
 type LValue struct {
@@ -1505,6 +1518,9 @@ func (lv *LValue) TranslateToILoc(instructions []ir.Instruction, symTable *st.Sy
 	}
 	return instructions
 }
+func (lv *LValue) GetTargetReg() int {
+	return lv.targetReg
+}
 
 type Expression struct {
 	Token     *token.Token
@@ -1562,7 +1578,6 @@ func (exp *Expression) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 	}
 	return errors
 }
-
 func (exp *Expression) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = exp.Left.TranslateToILoc(instructions, symTable)
 	if exp.Rights == nil || len(exp.Rights) == 0 {
@@ -1580,6 +1595,9 @@ func (exp *Expression) TranslateToILoc(instructions []ir.Instruction, symTable *
 	}
 	exp.targetReg = leftSource
 	return instructions
+}
+func (exp *Expression) GetTargetReg() int {
+	return exp.targetReg
 }
 
 type BoolTerm struct {
@@ -1656,6 +1674,9 @@ func (bt *BoolTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.
 	bt.targetReg = leftSource
 	return instructions
 }
+func (bt *BoolTerm) GetTargetReg() int {
+	return bt.targetReg
+}
 
 type EqualTerm struct {
 	Token         *token.Token
@@ -1724,6 +1745,9 @@ func (et *EqualTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	}
 	et.targetReg = leftSource
 	return instructions
+}
+func (et *EqualTerm) GetTargetReg() int {
+	return et.targetReg
 }
 
 type RelationTerm struct {
@@ -1815,6 +1839,9 @@ func (rt *RelationTerm) TranslateToILoc(instructions []ir.Instruction, symTable 
 	rt.targetReg = leftSource
 	return instructions
 }
+func (rt *RelationTerm) GetTargetReg() int {
+	return rt.targetReg
+}
 
 type SimpleTerm struct {
 	Token               *token.Token
@@ -1895,6 +1922,9 @@ func (st *SimpleTerm) TranslateToILoc(instructions []ir.Instruction, symTable *s
 	}
 	st.targetReg = leftSource
 	return instructions
+}
+func (st *SimpleTerm) GetTargetReg() int {
+	return st.targetReg
 }
 
 type Term struct {
@@ -1977,6 +2007,9 @@ func (t *Term) TranslateToILoc(instructions []ir.Instruction, symTable *st.Symbo
 	t.targetReg = leftSource
 	return instructions
 }
+func (t *Term) GetTargetReg() int {
+	return t.targetReg
+}
 
 type UnaryTerm struct {
 	Token         *token.Token
@@ -2039,6 +2072,9 @@ func (ut *UnaryTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st
 		ut.targetReg = target2
 	}
 	return instructions
+}
+func (ut *UnaryTerm) GetTargetReg() int {
+	return ut.targetReg
 }
 
 type SelectorTerm struct {
@@ -2126,6 +2162,9 @@ func (selt *SelectorTerm) TranslateToILoc(instructions []ir.Instruction, symTabl
 	}
 	return instructions
 }
+func (selt *SelectorTerm) GetTargetReg() int {
+	return selt.targetReg
+}
 
 type Factor struct {
 	Token     *token.Token
@@ -2153,8 +2192,11 @@ func (f *Factor) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 }
 func (f *Factor) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = f.Expr.TranslateToILoc(instructions, symTable)
-	f.targetReg = f.Expr.targetReg // TO-DO : add an interface function to retrieve Expr.targerReg
+	f.targetReg = f.Expr.GetTargetReg()
 	return instructions
+}
+func (f *Factor) GetTargetReg() int {
+	return f.targetReg
 }
 
 func NewType(typeLit string) *Type          { return &Type{nil, typeLit} }
@@ -2186,7 +2228,9 @@ func NewSelectorTerm(factor *Factor, idents []IdentLiteral) *SelectorTerm {
 }
 func NewFactor(expr *Expr) *Factor { return &Factor{nil, *expr, -1} }
 
-// InvocExpr : invocation in Factor ('id' [Arguments])
+/********************************* Expr inside Factor ***************************************/
+
+// InvocExpr invocation in Factor ('id' [Arguments])
 type InvocExpr struct {
 	Token     *token.Token
 	Ident     IdentLiteral
@@ -2257,6 +2301,9 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	instructions = append(instructions, popInstruct)
 	return instructions
 }
+func (ie *InvocExpr) GetTargetReg() int {
+	return ie.targetReg
+}
 
 // PriorityExpression : '(' Expression ')' (inside Factor)
 type PriorityExpression struct {
@@ -2290,6 +2337,9 @@ func (pe *PriorityExpression) TranslateToILoc(instructions []ir.Instruction, sym
 	pe.targetReg = pe.InnerExpression.targetReg
 	return instructions
 }
+func (pe *PriorityExpression) GetTargetReg() int {
+	return pe.targetReg
+}
 
 // NilNode : nil (keyword "nil")
 type NilNode struct {
@@ -2308,6 +2358,9 @@ func (n *NilNode) TypeCheck(errors []string, symTable *st.SymbolTable) []string 
 func (n *NilNode) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	n.targetReg = ir.NewRegister()
 	return instructions
+}
+func (n *NilNode) GetTargetReg() int {
+	return n.targetReg
 }
 
 // BoolLiteral : True/False
@@ -2333,6 +2386,9 @@ func (bl *BoolLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *
 	instructions = append(instructions, instruction)
 	return instructions
 }
+func (bl *BoolLiteral) GetTargetReg() int {
+	return bl.targetReg
+}
 
 // IntLiteral : number (integer)
 type IntLiteral struct {
@@ -2353,6 +2409,9 @@ func (il *IntLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *s
 	instruction := ir.NewMov(il.targetReg, intValue, ir.AL, ir.IMMEDIATE)
 	instructions = append(instructions, instruction)
 	return instructions
+}
+func (il *IntLiteral) GetTargetReg() int {
+	return il.targetReg
 }
 
 // IdentLiteral : identifier
@@ -2397,4 +2456,7 @@ func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable
 		instructions = append(instructions, instruction)
 	}
 	return instructions
+}
+func (idl *IdentLiteral) GetTargetReg() int {
+	return idl.targetReg
 }
