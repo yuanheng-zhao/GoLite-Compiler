@@ -491,7 +491,7 @@ func (fs *Functions) TranslateToILoc(instructions []ir.Instruction, symTable *st
 }
 func (fs *Functions) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag{
 	for _, fun := range fs.Functions {
-		funcFrag = fun.TranslateToILocFunc(funcFrag, symTable)
+		funcFrag = fun.TranslateToILocFunc(funcFrag, fun.st)
 	}
 	return funcFrag
 }
@@ -562,8 +562,39 @@ func (f *Function) TranslateToILoc(instructions []ir.Instruction, symTable *st.S
 }
 func (f *Function) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag{
 	var frag ir.FuncFrag
+	// function label
 	frag.Label = f.Ident.TokenLiteral()
+	funcLabelInstruct := ir.NewLabelStmt(frag.Label)
+	frag.Body = append(frag.Body, funcLabelInstruct)
+	// push values in registers associated with the registers to stack
+	pushReg := []int{}
+	params := symTable.ScopeParamNames
+	for _, param := range params {
+		entry := symTable.Contains(param)
+		pushReg = append(pushReg, entry.GetRegId())
+	}
+	if len(pushReg) != 0 {
+		pushInst := ir.NewPush(pushReg)
+		frag.Body = append(frag.Body, pushInst)
+		// reversed for future pop
+		for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
+			pushReg[i], pushReg[j] = pushReg[j], pushReg[i]
+		}
+	}
+	// move values from dedicated registers to parameters
+	for i := 1; i <= len(params); i++ {
+		entry := symTable.Contains(params[i - 1])
+		movInst := ir.NewMov(entry.GetRegId(), i, ir.AL, ir.REGISTER)
+		frag.Body = append(frag.Body, movInst)
+	}
+	// translate function statements
 	frag.Body = f.Statements.TranslateToILoc(frag.Body, symTable)
+	// pop the previously pushed values in registers associated with parameters
+	if len(pushReg) != 0 {
+		popInst := ir.NewPop(pushReg)
+		frag.Body = append(frag.Body, popInst)
+	}
+
 	funcFrag = append(funcFrag, &frag)
 	return funcFrag
 }
@@ -1060,6 +1091,16 @@ func (ret *Return) TypeCheck(errors []string, symTable *st.SymbolTable) []string
 	}
 	return errors
 }
+func (ret *Return) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	var retInst ir.Instruction
+	if ret.Expr == nil {
+		retInst = ir.NewRet(-1, ir.VOID)
+	} else {
+		retInst = ir.NewRet(ret.Expr.targetReg, ir.REGISTER)
+	}
+	instructions = append(instructions, retInst)
+	return instructions
+}
 
 // Invocation Statement, compared with InvocExpr
 type Invocation struct {
@@ -1089,7 +1130,7 @@ func (invoc *Invocation) PerformSABuild(errors []string, symTable *st.SymbolTabl
 func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// check whether function is declared
 	funcName := invoc.Ident.TokenLiteral()
-	entry := symTable.Contains(funcName)
+	entry := invoc.getFuncEntry(symTable)
 	if entry == nil {
 		errors = append(errors, fmt.Sprintf("[%v]: function %v has not been defined", invoc.Token.LineNum, funcName))
 	} else {
@@ -1099,19 +1140,73 @@ func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	return errors
 }
 func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	// push register values to stack, make space for parameter passing
 	arguments := invoc.Args.Exprs
-	paramNames := symTable.ScopeParamNames
-	if arguments != nil && len(arguments) != 0 {
-		for idx, arg := range arguments {
-			entry := symTable.Contains(paramNames[idx])
-			targetReg := entry.GetRegId()
-			passParamInstruct := ir.NewMov(targetReg, arg.targetReg, ir.AL, ir.REGISTER)
-			instructions = append(instructions, passParamInstruct)
+	pushReg := []int{}
+	for i := 1; i <= len(arguments); i++ {
+		pushReg = append(pushReg, i)
+	}
+	if len(pushReg) != 0 {
+		pushInstruct := ir.NewPush(pushReg)
+		instructions = append(instructions, pushInstruct)
+		// reversed for future pop
+		for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
+			pushReg[i], pushReg[j] = pushReg[j], pushReg[i]
 		}
 	}
+
+	// move argument to dedicated registers
+	for i := 1; i <= len(arguments); i++ {
+		movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.AL, ir.REGISTER)
+		instructions = append(instructions, movInstruct)
+	}
+
+	// branch to function
 	branchInstruct := ir.NewBl(invoc.Ident.TokenLiteral())
 	instructions = append(instructions, branchInstruct)
+
+	// create label for jumping after function call
+	// pop from stack to restore the previously pushed values
+	popInstruct := ir.NewPop(pushReg)
+	instructions = append(instructions, popInstruct)
 	return instructions
+
+	//// arguments to be passed in the invocation
+	//arguments := invoc.Args.Exprs
+	//// formal parameters in the function definition
+	//entry := invoc.getFuncEntry(symTable)
+	//scopeSymTable := entry.GetScopeST()
+	//paramNames := scopeSymTable.ScopeParamNames
+	//// move the values of each argument to the registers associated with parameters
+	//if arguments != nil && len(arguments) != 0 {
+	//	for idx, arg := range arguments {
+	//		entry := scopeSymTable.Contains(paramNames[idx])
+	//		targetReg := entry.GetRegId()
+	//		// targetReg : register with parameter
+	//		// sourceReg : register with arguments
+	//		passParamInstruct := ir.NewMov(targetReg, arg.targetReg, ir.AL, ir.REGISTER)
+	//		instructions = append(instructions, passParamInstruct)
+	//	}
+	//}
+	//branchInstruct := ir.NewBl(invoc.Ident.TokenLiteral())
+	//instructions = append(instructions, branchInstruct)
+	//return instructions
+}
+func (invoc *Invocation) getFuncEntry (symTable *st.SymbolTable) st.Entry{
+	var entry st.Entry
+	varName := invoc.Ident.TokenLiteral()
+	for {
+		if entry = symTable.Contains(varName); entry == nil {
+			if symTable.Parent == nil {
+				return nil
+			} else {
+				symTable = symTable.Parent
+			}
+		} else {
+			break
+		}
+	}
+	return entry
 }
 
 func NewProgram(pac *Package, imp *Import, typ *Types, decs *Declarations, funs *Functions) *Program {
