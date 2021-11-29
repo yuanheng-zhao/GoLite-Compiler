@@ -1335,8 +1335,9 @@ func (rt *ReturnType) TypeCheck(errors []string, symTable *st.SymbolTable) []str
 }
 
 type Arguments struct {
-	Token *token.Token
-	Exprs []Expression // MARKING
+	Token     *token.Token
+	Exprs     []Expression // MARKING
+	targetReg int
 }
 
 func (args *Arguments) TokenLiteral() string {
@@ -1381,11 +1382,18 @@ func (args *Arguments) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 	}
 	return errors
 }
+func (args *Arguments) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	for _, exp := range args.Exprs {
+		exp.TranslateToILoc(instructions, symTable)
+	}
+	return instructions
+}
 
 type LValue struct {
-	Token  *token.Token
-	Ident  IdentLiteral
-	Idents []IdentLiteral
+	Token     *token.Token
+	Ident     IdentLiteral
+	Idents    []IdentLiteral
+	targetReg int
 }
 
 func (lv *LValue) TokenLiteral() string {
@@ -1478,6 +1486,24 @@ func (lv *LValue) getStructEntry(symTable *st.SymbolTable) st.Entry {
 		}
 	}
 	return entry
+}
+func (lv *LValue) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = lv.Ident.TranslateToILoc(instructions, symTable)
+	if lv.Idents == nil || len(lv.Idents) == 0 {
+		lv.targetReg = lv.Ident.targetReg
+		return instructions
+	}
+	// id.id / id.id.id / ...
+	remainingBeforeLast := lv.Idents[:len(lv.Idents)-1]
+	source := lv.Ident.targetReg
+	for _, ident := range remainingBeforeLast {
+		target := ir.NewRegister()
+		instruction := ir.NewLoadRef(target, source, ident.Id)
+		instructions = append(instructions, instruction)
+		source = target
+		lv.targetReg = target
+	}
+	return instructions
 }
 
 type Expression struct {
@@ -2131,9 +2157,11 @@ func (f *Factor) TranslateToILoc(instructions []ir.Instruction, symTable *st.Sym
 	return instructions
 }
 
-func NewType(typeLit string) *Type                                { return &Type{nil, typeLit} }
-func NewArgs(exprs []Expression) *Arguments                       { return &Arguments{nil, exprs} }
-func NewLvalue(ident IdentLiteral, idents []IdentLiteral) *LValue { return &LValue{nil, ident, idents} }
+func NewType(typeLit string) *Type          { return &Type{nil, typeLit} }
+func NewArgs(exprs []Expression) *Arguments { return &Arguments{nil, exprs, -1} }
+func NewLvalue(ident IdentLiteral, idents []IdentLiteral) *LValue {
+	return &LValue{nil, ident, idents, -1}
+}
 func NewExpression(l *BoolTerm, rs []BoolTerm) *Expression {
 	return &Expression{nil, l, rs, -1}
 }
@@ -2195,19 +2223,6 @@ func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 		errors = ie.InnerArgs.TypeCheck(errors, symTable)
 	}
 	return errors
-}
-func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
-	idl.targetReg = ir.NewRegister()
-	if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
-		instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
-		instructions = append(instructions, instruction)
-	} else {
-		// if semantic analysis is correct, at here idl.id must appear in some symbol tables at or above the current level
-		sourceReg := symTable.PowerContains(idl.Id).GetRegId()
-		instruction := ir.NewMov(idl.targetReg, sourceReg, ir.AL, ir.REGISTER)
-		instructions = append(instructions, instruction)
-	}
-	return instructions
 }
 func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	// TO-DO : Refer from Invocation
@@ -2369,4 +2384,17 @@ func (idl *IdentLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []
 		errors = append(errors, fmt.Sprintf("[%v]: %v has not been defined.", idl.Token.LineNum, idl.Id))
 	}
 	return errors
+}
+func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	idl.targetReg = ir.NewRegister()
+	if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
+		instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
+		instructions = append(instructions, instruction)
+	} else {
+		// if semantic analysis is correct, at here idl.id must appear in some symbol tables at or above the current level
+		sourceReg := symTable.PowerContains(idl.Id).GetRegId()
+		instruction := ir.NewMov(idl.targetReg, sourceReg, ir.AL, ir.REGISTER)
+		instructions = append(instructions, instruction)
+	}
+	return instructions
 }
