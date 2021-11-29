@@ -24,7 +24,9 @@ func (instr *Branch) GetSourceString() string { return "" }
 
 func (instr *Branch) GetLabel() string { return instr.label }
 
-func (instr *Branch) SetLebel(newLabel string) {}
+func (instr *Branch) SetLabel(newLabel string) {
+	instr.label = newLabel
+}
 
 func (instr *Branch) String() string {
 	var out bytes.Buffer

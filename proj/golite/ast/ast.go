@@ -29,6 +29,13 @@ type Stmt interface {
 	PerformSABuild([]string, *st.SymbolTable) []string // TO-DO
 }
 
+// Func prog, funcs, func nodes need to implement this interface
+// two types of TranslateToILoc() functions are defined, but only one is useful
+type Func interface {
+	Node
+    TranslateToILocFunc([]*ir.FuncFrag, *st.SymbolTable) []*ir.FuncFrag
+}
+
 /******* Stmt : Statement *******/
 
 type Program struct {
@@ -74,10 +81,12 @@ func (p *Program) TypeCheck(errors []string, symTable *st.SymbolTable) []string 
 	errors = p.Functions.TypeCheck(errors, symTable)
 	return errors
 }
-func (p *Program) TranslateToILoc(symTable *st.SymbolTable) []ir.Instruction {
-	//instr := nil
-	//return instr
-	return nil
+func (p *Program) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag {
+	funcFrag = p.Functions.TranslateToILocFunc(funcFrag, symTable)
+	return funcFrag
+}
+func (p *Program) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instructions
 }
 
 type Package struct {
@@ -110,6 +119,9 @@ func (pkg *Package) TypeCheck(errors []string, symTable *st.SymbolTable) []strin
 	}
 	return errors
 }
+func (pkg *Package) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
+}
 
 type Import struct {
 	Token *token.Token
@@ -138,6 +150,9 @@ func (imp *Import) PerformSABuild(errors []string, symTable *st.SymbolTable) []s
 }
 func (imp *Import) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	return errors
+}
+func (imp *Import) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
 }
 
 type Types struct {
@@ -171,6 +186,9 @@ func (tys *Types) TypeCheck(errors []string, symTable *st.SymbolTable) []string 
 		errors = typedec.TypeCheck(errors, symTable)
 	}
 	return errors
+}
+func (tys *Types) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
 }
 
 type TypeDeclaration struct {
@@ -222,6 +240,9 @@ func (td *TypeDeclaration) TypeCheck(errors []string, symTable *st.SymbolTable) 
 	errors = append(errors, errors2...)
 	return errors
 }
+func (td *TypeDeclaration) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
+}
 
 type Fields struct {
 	Token *token.Token
@@ -258,6 +279,9 @@ func (fields *Fields) TypeCheck(errors []string, symTable *st.SymbolTable) []str
 		errors = decl.TypeCheck(errors, symTable)
 	}
 	return errors
+}
+func (fields *Fields) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
 }
 
 type Decl struct {
@@ -307,6 +331,9 @@ func (decl *Decl) TypeCheck(errors []string, symTable *st.SymbolTable) []string 
 	symTable.ScopeParamNames = append(symTable.ScopeParamNames, decl.Ident.TokenLiteral())
 	return errors
 }
+func (decl *Decl) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
+}
 
 type Declarations struct {
 	Token        *token.Token
@@ -340,6 +367,9 @@ func (ds *Declarations) TypeCheck(errors []string, symTable *st.SymbolTable) []s
 		errors = dec.TypeCheck(errors, symTable)
 	}
 	return errors
+}
+func (ds *Declarations) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
 }
 
 type Declaration struct {
@@ -377,6 +407,9 @@ func (d *Declaration) TypeCheck(errors []string, symTable *st.SymbolTable) []str
 		entry.SetType(decType)
 	}
 	return errors
+}
+func (d *Declaration) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
 }
 
 type Ids struct {
@@ -418,6 +451,9 @@ func (ids *Ids) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// objective: none, accomplished in Declaration
 	return errors
 }
+func (ids *Ids) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instructions
+}
 
 type Functions struct {
 	Token     *token.Token
@@ -449,6 +485,15 @@ func (fs *Functions) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 		errors = fun.TypeCheck(errors, symTable)
 	}
 	return errors
+}
+func (fs *Functions) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instructions
+}
+func (fs *Functions) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag{
+	for _, fun := range fs.Functions {
+		funcFrag = fun.TranslateToILocFunc(funcFrag, symTable)
+	}
+	return funcFrag
 }
 
 type Function struct {
@@ -511,6 +556,16 @@ func (f *Function) TypeCheck(errors []string, symTable *st.SymbolTable) []string
 	errors = f.Declarations.TypeCheck(errors, f.st)
 	errors = f.Statements.TypeCheck(errors, f.st)
 	return errors
+}
+func (f *Function) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instructions
+}
+func (f *Function) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag{
+	var frag ir.FuncFrag
+	frag.Label = f.Ident.TokenLiteral()
+	frag.Body = f.Statements.TranslateToILoc(frag.Body, symTable)
+	funcFrag = append(funcFrag, &frag)
+	return funcFrag
 }
 
 type Parameters struct {
@@ -588,6 +643,12 @@ func (stmts *Statements) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	}
 	return errors
 }
+func (stmts *Statements) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	for _, stmt := range stmts.Statements {
+		instructions = stmt.TranslateToILoc(instructions, symTable)
+	}
+	return instructions
+}
 
 type Statement struct {
 	Token *token.Token
@@ -614,6 +675,10 @@ func (s *Statement) TypeCheck(errors []string, symTable *st.SymbolTable) []strin
 	// objective: none
 	errors = s.Stmt.TypeCheck(errors, symTable)
 	return errors
+}
+func (s *Statement) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = s.Stmt.TranslateToILoc(instructions, symTable)
+	return instructions
 }
 
 type Block struct {
@@ -644,6 +709,10 @@ func (b *Block) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// objective: none
 	errors = b.Statements.TypeCheck(errors, symTable)
 	return errors
+}
+func (b *Block) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = b.Statements.TranslateToILoc(instructions, symTable)
+	return instructions
 }
 
 type Assignment struct {
@@ -697,8 +766,21 @@ func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 			errors = append(errors, fmt.Sprintf("[%v]: %v is not assignable", a.Token.LineNum, a.Lvalue.String()))
 			return errors
 		}
+		entry := a.Lvalue.getStructEntry(symTable)
+		if entry != nil {
+			entry.SetValue(a.Expr.TokenLiteral())
+		}
+		// to-discuss: the value to be assigned to the variable in the symbol table
 	}
 	return errors
+}
+
+func (a *Assignment) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	exprReg := a.Expr.targetReg
+	lvReg := a.Lvalue.targetReg
+	instruction := ir.NewMov(lvReg, exprReg, ir.AL, ir.REGISTER)
+	instructions = append(instructions, instruction)
+	return instructions
 }
 
 type Read struct {
@@ -737,6 +819,12 @@ func (r *Read) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	}
 	return errors
 }
+func (r *Read) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	entry := symTable.Contains(r.Ident.TokenLiteral())
+	instruction := ir.NewRead(entry.GetRegId())
+	instructions = append(instructions, instruction)
+	return instructions
+}
 
 type Print struct {
 	Token       *token.Token
@@ -773,6 +861,20 @@ func (p *Print) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 		errors = append(errors, fmt.Sprintf("[%v]: variable %v has not been declared", p.Token.LineNum, varName))
 	}
 	return errors
+}
+func (p *Print) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	var instruction ir.Instruction
+	entry := symTable.Contains(p.Ident.TokenLiteral())
+	reg := entry.GetRegId()
+
+	if p.printMethod == "Print" {
+		instruction = ir.NewPrint(reg)
+	} else {
+		instruction = ir.NewPrintln(reg)
+	}
+
+	instructions = append(instructions, instruction)
+	return instructions
 }
 
 type Conditional struct {
@@ -822,6 +924,37 @@ func (cond *Conditional) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	}
 	return errors
 }
+func (cond *Conditional) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	elseLabel := ir.NewLabelWithPre("else")
+	doneLabel := ir.NewLabelWithPre("done")
+	// conditional expression
+	instructions = cond.Expr.TranslateToILoc(instructions, symTable)
+	// jump to else if false
+	cmpInstruct := ir.NewCmp(cond.Expr.targetReg, 1, ir.IMMEDIATE)
+	var brFalseInst ir.Instruction
+	if cond.ElseBlock != nil {
+		brFalseInst = ir.NewBranch(ir.NE, elseLabel)
+	} else {
+		brFalseInst = ir.NewBranch(ir.NE, doneLabel)
+	}
+	instructions = append(instructions, cmpInstruct)
+	instructions = append(instructions, brFalseInst)
+	// if clause
+	instructions = cond.Block.TranslateToILoc(instructions, symTable)
+	// else clause
+	if cond.ElseBlock != nil {
+		brEndInst := ir.NewBranch(ir.AL, doneLabel)
+		elsLabelInst := ir.NewLabelStmt(elseLabel)
+		instructions = append(instructions, brEndInst)
+		instructions = append(instructions, elsLabelInst)
+		instructions = cond.ElseBlock.TranslateToILoc(instructions, symTable)
+	}
+	// end of if statement
+	doneLabelInstr := ir.NewLabelStmt(doneLabel)
+	instructions = append(instructions, doneLabelInstr)
+
+	return instructions
+}
 
 type Loop struct {
 	Token *token.Token
@@ -863,6 +996,29 @@ func (lp *Loop) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 		}
 	}
 	return errors
+}
+func (lp *Loop) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	condLabel := ir.NewLabelWithPre("condLabel")
+	bodyLabel := ir.NewLabelWithPre("loopBody")
+	// b condLabel1
+	branchInstruct := ir.NewBranch(ir.AL, condLabel)
+	instructions = append(instructions, branchInstruct)
+	// loopBody1:
+	bodyLabelInstruct := ir.NewLabelStmt(bodyLabel)
+	instructions = append(instructions, bodyLabelInstruct)
+	// loop body
+	instructions = lp.Block.TranslateToILoc(instructions, symTable)
+	// condLabel1:
+	condLabelInstruct := ir.NewLabelStmt(condLabel)
+	instructions = append(instructions, condLabelInstruct)
+	// conditional expression
+	instructions = lp.Expr.TranslateToILoc(instructions, symTable)
+	cmpInstruct := ir.NewCmp(lp.Expr.targetReg, 1, ir.IMMEDIATE)
+	lpCondCheckInstruct := ir.NewBranch(ir.EQ, bodyLabel)
+	instructions = append(instructions, cmpInstruct)
+	instructions = append(instructions, lpCondCheckInstruct)
+
+	return instructions
 }
 
 type Return struct {
@@ -942,6 +1098,21 @@ func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	}
 	return errors
 }
+func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	arguments := invoc.Args.Exprs
+	paramNames := symTable.ScopeParamNames
+	if arguments != nil && len(arguments) != 0 {
+		for idx, arg := range arguments {
+			entry := symTable.Contains(paramNames[idx])
+			targetReg := entry.GetRegId()
+			passParamInstruct := ir.NewMov(targetReg, arg.targetReg, ir.AL, ir.REGISTER)
+			instructions = append(instructions, passParamInstruct)
+		}
+	}
+	branchInstruct := ir.NewBl(invoc.Ident.TokenLiteral())
+	instructions = append(instructions, branchInstruct)
+	return instructions
+}
 
 func NewProgram(pac *Package, imp *Import, typ *Types, decs *Declarations, funs *Functions) *Program {
 	return &Program{nil, nil, pac, imp, typ, decs, funs}
@@ -1013,6 +1184,9 @@ func (t *Type) GetType(symTable *st.SymbolTable) types.Type {
 }
 func (t *Type) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	return errors
+}
+func (t *Type) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	return instrcs
 }
 
 type ReturnType struct {
@@ -1108,12 +1282,56 @@ func (lv *LValue) String() string {
 	return out.String()
 }
 func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
+	//var entry st.Entry
+	//varName := lv.Ident.TokenLiteral()
+	//for {
+	//	if entry = symTable.Contains(varName); entry == nil {
+	//		if symTable.Parent == nil {
+	//			return types.UnknownTySig
+	//		} else {
+	//			symTable = symTable.Parent
+	//		}
+	//	} else {
+	//		break
+	//	}
+	//}
+	//if lv.Idents == nil {
+	//	return entry.GetEntryType()
+	//}
+	//// here entry is the entry of the first id in Idents
+	//symTable = entry.GetScopeST()
+	//remaining := lv.Idents[1:]
+	//for idx, id := range remaining {
+	//	if entry = symTable.Contains(id.String()); entry == nil {
+	//		return types.UnknownTySig
+	//	} else {
+	//		if idx == len(lv.Idents)-1 {
+	//			break
+	//		}
+	//		symTable = entry.GetScopeST()
+	//	}
+	//}
+	//return entry.GetEntryType()
+	entry := lv.getStructEntry(symTable)
+	if entry != nil {
+		return entry.GetEntryType()
+	} else {
+		return types.UnknownTySig
+	}
+}
+func (lv *LValue) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	if lv.GetType(symTable) == types.UnknownTySig {
+		errors = append(errors, fmt.Sprintf("[%v]: (LValue) inner field has not been defined", lv.Token.LineNum))
+	}
+	return errors
+}
+func (lv *LValue) getStructEntry (symTable *st.SymbolTable) st.Entry{
 	var entry st.Entry
 	varName := lv.Ident.TokenLiteral()
 	for {
 		if entry = symTable.Contains(varName); entry == nil {
 			if symTable.Parent == nil {
-				return types.UnknownTySig
+				return nil
 			} else {
 				symTable = symTable.Parent
 			}
@@ -1122,14 +1340,14 @@ func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
 		}
 	}
 	if lv.Idents == nil {
-		return entry.GetEntryType()
+		return entry
 	}
 	// here entry is the entry of the first id in Idents
 	symTable = entry.GetScopeST()
 	remaining := lv.Idents[1:]
 	for idx, id := range remaining {
 		if entry = symTable.Contains(id.String()); entry == nil {
-			return types.UnknownTySig
+			return nil
 		} else {
 			if idx == len(lv.Idents)-1 {
 				break
@@ -1137,19 +1355,14 @@ func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
 			symTable = entry.GetScopeST()
 		}
 	}
-	return entry.GetEntryType()
-}
-func (lv *LValue) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
-	if lv.GetType(symTable) == types.UnknownTySig {
-		errors = append(errors, fmt.Sprintf("[%v]: (LValue) inner field has not been defined", lv.Token.LineNum))
-	}
-	return errors
+	return entry
 }
 
 type Expression struct {
 	Token  *token.Token
 	Left   *BoolTerm
 	Rights []BoolTerm
+	targetReg int  // bind the result of the current Expression to a target register id
 }
 
 func (exp *Expression) TokenLiteral() string {
@@ -1200,6 +1413,22 @@ func (exp *Expression) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 		}
 	}
 	return errors
+}
+func (exp *Expression) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = exp.Left.TranslateToIloc(instructions, symTable)
+	if exp.Rights == nil {
+		exp.targetReg = exp.Left.targetReg
+		return instructions
+	}
+	leftSource := exp.Left.targetReg
+	for _, rTerm := range exp.Rights {
+		currTarget := ir.NewRegister()
+		// in this way, OperandTy is always REGISTER
+		instruction := ir.NewOr(currTarget, leftSource, rTerm.targetReg, ir.REGISTER)
+		instructions = append(instructions, instruction)
+		leftSource = currTarget
+	}
+	return instructions
 }
 
 type BoolTerm struct {
@@ -1257,6 +1486,7 @@ func (bt *BoolTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []strin
 	}
 	return errors
 }
+func ()
 
 type EqualTerm struct {
 	Token         *token.Token
