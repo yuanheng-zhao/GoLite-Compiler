@@ -82,6 +82,7 @@ func (p *Program) TypeCheck(errors []string, symTable *st.SymbolTable) []string 
 	return errors
 }
 func (p *Program) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag {
+	funcFrag = p.Declarations.TranslateToILocFunc(funcFrag, symTable)
 	funcFrag = p.Functions.TranslateToILocFunc(funcFrag, symTable)
 	return funcFrag
 }
@@ -371,6 +372,18 @@ func (ds *Declarations) TypeCheck(errors []string, symTable *st.SymbolTable) []s
 func (ds *Declarations) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	return instrcs
 }
+func (ds *Declarations) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag {
+	var frag ir.FuncFrag
+	frag.Label = ir.NewLabelWithPre("Global Variable")
+	funcLabelInstruct := ir.NewLabelStmt(frag.Label)
+	frag.Body = append(frag.Body, funcLabelInstruct)
+
+	for _, dec := range ds.Declarations {
+		frag.Body = dec.TranslateToILoc(frag.Body, symTable)
+	}
+
+	return funcFrag
+}
 
 type Declaration struct {
 	Token *token.Token
@@ -409,6 +422,7 @@ func (d *Declaration) TypeCheck(errors []string, symTable *st.SymbolTable) []str
 	return errors
 }
 func (d *Declaration) TranslateToILoc(instrcs []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instrcs = d.Ids.TranslateToILoc(instrcs, symTable)
 	return instrcs
 }
 
@@ -452,6 +466,14 @@ func (ids *Ids) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	return errors
 }
 func (ids *Ids) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	for _, id := range ids.Idents {
+		entry := symTable.Contains(id.TokenLiteral())
+		regId := entry.GetRegId()
+		movIns := ir.NewMov(regId, 0, ir.AL, ir.IMMEDIATE)
+		strIns := ir.NewStr(regId, -1, -1, id.TokenLiteral(), ir.GLOBALVAR)
+		instructions = append(instructions, movIns)
+		instructions = append(instructions, strIns)
+	}
 	return instructions
 }
 
@@ -1165,7 +1187,7 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 	branchInstruct := ir.NewBl(invoc.Ident.TokenLiteral())
 	instructions = append(instructions, branchInstruct)
 
-	// create label for jumping after function call
+	// after returning from the function
 	// pop from stack to restore the previously pushed values
 	popInstruct := ir.NewPop(pushReg)
 	instructions = append(instructions, popInstruct)
@@ -2189,7 +2211,36 @@ func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable
 }
 func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	// TO-DO : Refer from Invocation
+	// push register values to stack, make space for parameter passing
+	arguments := ie.InnerArgs.Exprs
+	pushReg := []int{}
+	for i := 1; i < len(arguments); i++ {
+		pushReg = append(pushReg, i)
+	}
+	if len(pushReg) != 0 {
+		pushInstruct := ir.NewPush(pushReg)
+		instructions = append(instructions, pushInstruct)
+		// reversed for future pop
+		for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
+			pushReg[i], pushReg[j] = pushReg[j], pushReg[i]
+		}
+	}
 
+	// move argument to dedicated registers
+	for i := 1; i <= len(arguments); i++ {
+		movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.AL, ir.REGISTER)
+		instructions = append(instructions, movInstruct)
+	}
+
+	// branch to function
+	branchInstruct := ir.NewBl(ie.Ident.TokenLiteral())
+	instructions = append(instructions, branchInstruct)
+
+	// after returning from the function
+	// pop from stack to restore the previously pushed values
+	popInstruct := ir.NewPop(pushReg)
+	instructions = append(instructions, popInstruct)
+	return instructions
 }
 
 // PriorityExpression : '(' Expression ')' (inside Factor)
