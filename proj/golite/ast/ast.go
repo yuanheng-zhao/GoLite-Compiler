@@ -33,7 +33,7 @@ type Stmt interface {
 // two types of TranslateToILoc() functions are defined, but only one is useful
 type Func interface {
 	Node
-    TranslateToILocFunc([]*ir.FuncFrag, *st.SymbolTable) []*ir.FuncFrag
+	TranslateToILocFunc([]*ir.FuncFrag, *st.SymbolTable) []*ir.FuncFrag
 }
 
 /******* Stmt : Statement *******/
@@ -489,7 +489,7 @@ func (fs *Functions) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 func (fs *Functions) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	return instructions
 }
-func (fs *Functions) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag{
+func (fs *Functions) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag {
 	for _, fun := range fs.Functions {
 		funcFrag = fun.TranslateToILocFunc(funcFrag, fun.st)
 	}
@@ -560,7 +560,7 @@ func (f *Function) TypeCheck(errors []string, symTable *st.SymbolTable) []string
 func (f *Function) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	return instructions
 }
-func (f *Function) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag{
+func (f *Function) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag {
 	var frag ir.FuncFrag
 	// function label
 	frag.Label = f.Ident.TokenLiteral()
@@ -583,7 +583,7 @@ func (f *Function) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.Sym
 	}
 	// move values from dedicated registers to parameters
 	for i := 1; i <= len(params); i++ {
-		entry := symTable.Contains(params[i - 1])
+		entry := symTable.Contains(params[i-1])
 		movInst := ir.NewMov(entry.GetRegId(), i, ir.AL, ir.REGISTER)
 		frag.Body = append(frag.Body, movInst)
 	}
@@ -1192,7 +1192,7 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 	//instructions = append(instructions, branchInstruct)
 	//return instructions
 }
-func (invoc *Invocation) getFuncEntry (symTable *st.SymbolTable) st.Entry{
+func (invoc *Invocation) getFuncEntry(symTable *st.SymbolTable) st.Entry {
 	var entry st.Entry
 	varName := invoc.Ident.TokenLiteral()
 	for {
@@ -1344,6 +1344,11 @@ func (args *Arguments) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 	// used as parameters for calling a function
 	expectedTys := symTable.ScopeParamTys
 	paramNames := symTable.ScopeParamNames
+	if len(expectedTys) != len(args.Exprs) {
+		errors = append(errors, fmt.Sprintf("[%v]: Prompted %v parameters, found %v given parameters",
+			args.Token.LineNum, len(expectedTys), len(args.Exprs)))
+		return errors
+	}
 	for idx, expr := range args.Exprs {
 		errors = expr.TypeCheck(errors, symTable)
 		givenParamTy := expr.GetType(symTable)
@@ -1420,7 +1425,7 @@ func (lv *LValue) TypeCheck(errors []string, symTable *st.SymbolTable) []string 
 	}
 	return errors
 }
-func (lv *LValue) getStructEntry (symTable *st.SymbolTable) st.Entry{
+func (lv *LValue) getStructEntry(symTable *st.SymbolTable) st.Entry {
 	var entry st.Entry
 	varName := lv.Ident.TokenLiteral()
 	for {
@@ -1454,10 +1459,10 @@ func (lv *LValue) getStructEntry (symTable *st.SymbolTable) st.Entry{
 }
 
 type Expression struct {
-	Token  *token.Token
-	Left   *BoolTerm
-	Rights []BoolTerm
-	targetReg int  // bind the result of the current Expression to a target register id
+	Token     *token.Token
+	Left      *BoolTerm
+	Rights    []BoolTerm
+	targetReg int // bind the result of the current Expression to a target register id
 }
 
 func (exp *Expression) TokenLiteral() string {
@@ -1509,27 +1514,31 @@ func (exp *Expression) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 	}
 	return errors
 }
+
 func (exp *Expression) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
-	instructions = exp.Left.TranslateToIloc(instructions, symTable)
-	if exp.Rights == nil {
+	instructions = exp.Left.TranslateToILoc(instructions, symTable)
+	if exp.Rights == nil || len(exp.Rights) == 0 {
 		exp.targetReg = exp.Left.targetReg
 		return instructions
 	}
+
 	leftSource := exp.Left.targetReg
 	for _, rTerm := range exp.Rights {
-		currTarget := ir.NewRegister()
+		target := ir.NewRegister()
 		// in this way, OperandTy is always REGISTER
-		instruction := ir.NewOr(currTarget, leftSource, rTerm.targetReg, ir.REGISTER)
+		instruction := ir.NewOr(target, leftSource, rTerm.targetReg, ir.REGISTER)
 		instructions = append(instructions, instruction)
-		leftSource = currTarget
+		leftSource = target
 	}
+	exp.targetReg = leftSource
 	return instructions
 }
 
 type BoolTerm struct {
-	Token  *token.Token
-	Left   *EqualTerm
-	Rights []EqualTerm
+	Token     *token.Token
+	Left      *EqualTerm
+	Rights    []EqualTerm
+	targetReg int
 }
 
 func (bt *BoolTerm) TokenLiteral() string {
@@ -1581,13 +1590,31 @@ func (bt *BoolTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []strin
 	}
 	return errors
 }
-func ()
+func (bt *BoolTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = bt.Left.TranslateToILoc(instructions, symTable)
+	if bt.Rights == nil || len(bt.Rights) == 0 {
+		bt.targetReg = bt.Left.targetReg
+		return instructions
+	}
+
+	leftSource := bt.Left.targetReg
+	for _, rTerm := range bt.Rights {
+		target := ir.NewRegister()
+		// OperandTy is always REGISTER
+		instruction := ir.NewAnd(target, leftSource, rTerm.targetReg, ir.REGISTER)
+		instructions = append(instructions, instruction)
+		leftSource = target
+	}
+	bt.targetReg = leftSource
+	return instructions
+}
 
 type EqualTerm struct {
 	Token         *token.Token
 	Left          *RelationTerm
 	EqualOperator []string // '=='|'!='
 	Rights        []RelationTerm
+	targetReg     int
 }
 
 func (et *EqualTerm) TokenLiteral() string {
@@ -1624,12 +1651,39 @@ func (et *EqualTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 	}
 	return errors
 }
+func (et *EqualTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = et.Left.TranslateToILoc(instructions, symTable)
+	if et.Rights == nil || len(et.Rights) == 0 {
+		et.targetReg = et.Left.targetReg
+		return instructions
+	}
+
+	leftSource := et.Left.targetReg
+	for idx, rTerm := range et.Rights {
+		// Put into a new register the "false" value ("false" = 0) before the cmp
+		target := ir.NewRegister()
+		instruction1 := ir.NewMov(target, 0, ir.AL, ir.IMMEDIATE)
+		instruction2 := ir.NewCmp(leftSource, rTerm.targetReg, ir.REGISTER)
+		var instruction3 ir.Instruction
+		if et.EqualOperator[idx] == "==" {
+			instruction3 = ir.NewMov(target, 1, ir.EQ, ir.IMMEDIATE)
+		} else { // "!="
+			instruction3 = ir.NewMov(target, 1, ir.NE, ir.IMMEDIATE)
+		}
+
+		instructions = append(instructions, instruction1, instruction2, instruction3)
+		leftSource = target
+	}
+	et.targetReg = leftSource
+	return instructions
+}
 
 type RelationTerm struct {
 	Token             *token.Token
 	Left              *SimpleTerm
 	RelationOperators []string // '>'| '<' | '<=' | '>='
 	Rights            []SimpleTerm
+	targetReg         int
 }
 
 func (rt *RelationTerm) TokenLiteral() string {
@@ -1682,12 +1736,44 @@ func (rt *RelationTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []s
 	}
 	return errors
 }
+func (rt *RelationTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = rt.Left.TranslateToILoc(instructions, symTable)
+	if rt.Rights == nil || len(rt.Rights) == 0 {
+		rt.targetReg = rt.Left.targetReg
+		return instructions
+	}
+
+	leftSource := rt.Left.targetReg
+	for idx, rTerm := range rt.Rights {
+		relationOperator := rt.RelationOperators[idx]
+		// Put into a new register the "false" value ("false" = 0) before the cmp
+		target := ir.NewRegister()
+		instruction1 := ir.NewMov(target, 0, ir.AL, ir.IMMEDIATE)
+		instruction2 := ir.NewCmp(leftSource, rTerm.targetReg, ir.REGISTER)
+		var instruction3 ir.Instruction
+		if relationOperator == ">" {
+			instruction3 = ir.NewMov(target, 1, ir.GT, ir.IMMEDIATE)
+		} else if relationOperator == "<" {
+			instruction3 = ir.NewMov(target, 1, ir.LT, ir.IMMEDIATE)
+		} else if relationOperator == "<=" {
+			instruction3 = ir.NewMov(target, 1, ir.LE, ir.IMMEDIATE)
+		} else { // >=
+			instruction3 = ir.NewMov(target, 1, ir.GE, ir.IMMEDIATE)
+		}
+
+		instructions = append(instructions, instruction1, instruction2, instruction3)
+		leftSource = target
+	}
+	rt.targetReg = leftSource
+	return instructions
+}
 
 type SimpleTerm struct {
 	Token               *token.Token
 	Left                *Term
 	SimpleTermOperators []string // '+' | '-'
 	Rights              []Term
+	targetReg           int
 }
 
 func (st *SimpleTerm) TokenLiteral() string {
@@ -1740,12 +1826,35 @@ func (st *SimpleTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []str
 	}
 	return errors
 }
+func (st *SimpleTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = st.Left.TranslateToILoc(instructions, symTable)
+	if st.Rights == nil || len(st.Rights) == 0 {
+		st.targetReg = st.Left.targetReg
+		return instructions
+	}
+
+	leftSource := st.Left.targetReg
+	for idx, rTerm := range st.Rights {
+		target := ir.NewRegister()
+		var instruction ir.Instruction
+		if st.SimpleTermOperators[idx] == "+" {
+			instruction = ir.NewAdd(target, leftSource, rTerm.targetReg, ir.REGISTER)
+		} else { // "-"
+			instruction = ir.NewSub(target, leftSource, rTerm.targetReg, ir.REGISTER)
+		}
+		instructions = append(instructions, instruction)
+		leftSource = target
+	}
+	st.targetReg = leftSource
+	return instructions
+}
 
 type Term struct {
 	Token         *token.Token
 	Left          *UnaryTerm
 	TermOperators []string // '*' | '/'
 	Rights        []UnaryTerm
+	targetReg     int
 }
 
 func (t *Term) TokenLiteral() string {
@@ -1798,11 +1907,34 @@ func (t *Term) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	}
 	return errors
 }
+func (t *Term) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = t.Left.TranslateToILoc(instructions, symTable)
+	if t.Rights == nil || len(t.Rights) == 0 {
+		t.targetReg = t.Left.targetReg
+		return instructions
+	}
+
+	leftSource := t.Left.targetReg
+	for idx, rTerm := range t.Rights {
+		target := ir.NewRegister()
+		var instruction ir.Instruction
+		if t.TermOperators[idx] == "*" {
+			instruction = ir.NewMul(target, leftSource, rTerm.targetReg)
+		} else { // "/"
+			instruction = ir.NewDiv(target, leftSource, rTerm.targetReg)
+		}
+		instructions = append(instructions, instruction)
+		leftSource = target
+	}
+	t.targetReg = leftSource
+	return instructions
+}
 
 type UnaryTerm struct {
 	Token         *token.Token
 	UnaryOperator string // '!' | '-' | '' <- default
 	SelectorTerm  *SelectorTerm
+	targetReg     int
 }
 
 func (ut *UnaryTerm) TokenLiteral() string {
@@ -1841,11 +1973,31 @@ func (ut *UnaryTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 	}
 	return errors
 }
+func (ut *UnaryTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = ut.SelectorTerm.TranslateToILoc(instructions, symTable)
+	if ut.UnaryOperator == "" {
+		ut.targetReg = ut.SelectorTerm.targetReg
+	} else if ut.UnaryOperator == "!" {
+		target := ir.NewRegister()
+		instruction := ir.NewNot(target, ut.SelectorTerm.targetReg, ir.REGISTER)
+		instructions = append(instructions, instruction)
+		ut.targetReg = target
+	} else { // "-"
+		target1 := ir.NewRegister()
+		instruction1 := ir.NewMov(target1, 0, ir.AL, ir.IMMEDIATE) // mov r_x,#0
+		target2 := ir.NewRegister()
+		instruction2 := ir.NewSub(target2, target1, ut.SelectorTerm.targetReg, ir.REGISTER)
+		instructions = append(instructions, instruction1, instruction2)
+		ut.targetReg = target2
+	}
+	return instructions
+}
 
 type SelectorTerm struct {
-	Token  *token.Token
-	Fact   *Factor
-	Idents []IdentLiteral
+	Token     *token.Token
+	Fact      *Factor
+	Idents    []IdentLiteral
+	targetReg int
 }
 
 func (selt *SelectorTerm) TokenLiteral() string {
@@ -1909,10 +2061,28 @@ func (selt *SelectorTerm) TypeCheck(errors []string, symTable *st.SymbolTable) [
 	}
 	return errors
 }
+func (selt *SelectorTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = selt.Fact.TranslateToILoc(instructions, symTable)
+	if selt.Idents == nil || len(selt.Idents) == 0 {
+		selt.targetReg = selt.Fact.targetReg
+		return instructions
+	}
+	// Factor.id / Factor.id.id / ...
+	source := selt.Fact.targetReg
+	for _, ident := range selt.Idents {
+		target := ir.NewRegister()
+		instruction := ir.NewLoadRef(target, source, ident.Id)
+		instructions = append(instructions, instruction)
+		source = target
+		selt.targetReg = target
+	}
+	return instructions
+}
 
 type Factor struct {
-	Token *token.Token
-	Expr  Expr
+	Token     *token.Token
+	Expr      Expr
+	targetReg int
 }
 
 func (f *Factor) TokenLiteral() string {
@@ -1933,39 +2103,45 @@ func (f *Factor) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	errors = f.Expr.TypeCheck(errors, symTable)
 	return errors
 }
+func (f *Factor) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = f.Expr.TranslateToILoc(instructions, symTable)
+	f.targetReg = f.Expr.targetReg // TO-DO : add an interface function to retrieve Expr.targerReg
+	return instructions
+}
 
 func NewType(typeLit string) *Type                                { return &Type{nil, typeLit} }
 func NewArgs(exprs []Expression) *Arguments                       { return &Arguments{nil, exprs} }
 func NewLvalue(ident IdentLiteral, idents []IdentLiteral) *LValue { return &LValue{nil, ident, idents} }
 func NewExpression(l *BoolTerm, rs []BoolTerm) *Expression {
-	return &Expression{nil, l, rs}
+	return &Expression{nil, l, rs, -1}
 }
-func NewBoolTerm(l *EqualTerm, rs []EqualTerm) *BoolTerm { return &BoolTerm{nil, l, rs} }
+func NewBoolTerm(l *EqualTerm, rs []EqualTerm) *BoolTerm { return &BoolTerm{nil, l, rs, -1} }
 func NewEqualTerm(l *RelationTerm, operators []string, rs []RelationTerm) *EqualTerm {
-	return &EqualTerm{nil, l, operators, rs}
+	return &EqualTerm{nil, l, operators, rs, -1}
 }
 func NewRelationTerm(l *SimpleTerm, operators []string, rs []SimpleTerm) *RelationTerm {
-	return &RelationTerm{nil, l, operators, rs}
+	return &RelationTerm{nil, l, operators, rs, -1}
 }
 func NewSimpleTerm(l *Term, operators []string, rs []Term) *SimpleTerm {
-	return &SimpleTerm{nil, l, operators, rs}
+	return &SimpleTerm{nil, l, operators, rs, -1}
 }
 func NewTerm(l *UnaryTerm, operators []string, rs []UnaryTerm) *Term {
-	return &Term{nil, l, operators, rs}
+	return &Term{nil, l, operators, rs, -1}
 }
 func NewUnaryTerm(operator string, selectorTerm *SelectorTerm) *UnaryTerm {
-	return &UnaryTerm{nil, operator, selectorTerm}
+	return &UnaryTerm{nil, operator, selectorTerm, -1}
 }
 func NewSelectorTerm(factor *Factor, idents []IdentLiteral) *SelectorTerm {
-	return &SelectorTerm{nil, factor, idents}
+	return &SelectorTerm{nil, factor, idents, -1}
 }
-func NewFactor(expr *Expr) *Factor { return &Factor{nil, *expr} }
+func NewFactor(expr *Expr) *Factor { return &Factor{nil, *expr, -1} }
 
 // InvocExpr : invocation in Factor ('id' [Arguments])
 type InvocExpr struct {
 	Token     *token.Token
 	Ident     IdentLiteral
 	InnerArgs *Arguments
+	targetReg int
 }
 
 func (ie *InvocExpr) TokenLiteral() string {
@@ -1998,11 +2174,29 @@ func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 	}
 	return errors
 }
+func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	idl.targetReg = ir.NewRegister()
+	if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
+		instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
+		instructions = append(instructions, instruction)
+	} else {
+		// if semantic analysis is correct, at here idl.id must appear in some symbol tables at or above the current level
+		sourceReg := symTable.PowerContains(idl.Id).GetRegId()
+		instruction := ir.NewMov(idl.targetReg, sourceReg, ir.AL, ir.REGISTER)
+		instructions = append(instructions, instruction)
+	}
+	return instructions
+}
+func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	// TO-DO : Refer from Invocation
+
+}
 
 // PriorityExpression : '(' Expression ')' (inside Factor)
 type PriorityExpression struct {
 	Token           *token.Token
 	InnerExpression *Expression
+	targetReg       int
 }
 
 func (pe *PriorityExpression) TokenLiteral() string {
@@ -2025,10 +2219,18 @@ func (pe *PriorityExpression) TypeCheck(errors []string, symTable *st.SymbolTabl
 	errors = pe.InnerExpression.TypeCheck(errors, symTable)
 	return errors
 }
+func (pe *PriorityExpression) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = pe.InnerExpression.TranslateToILoc(instructions, symTable)
+	pe.targetReg = pe.InnerExpression.targetReg
+	return instructions
+}
 
 // NilNode : nil (keyword "nil")
 type NilNode struct {
-	Token *token.Token
+	// TO-DO  : how to assign a targetReg to NilNode
+	// Updated: currently we represent a NIL literal as just equal to 0 (discussed on Ed)
+	Token     *token.Token
+	targetReg int
 }
 
 func (n *NilNode) TokenLiteral() string                        { return n.Token.Literal }
@@ -2037,11 +2239,16 @@ func (n *NilNode) GetType(symTable *st.SymbolTable) types.Type { return types.Vo
 func (n *NilNode) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	return errors
 }
+func (n *NilNode) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	n.targetReg = ir.NewRegister()
+	return instructions
+}
 
 // BoolLiteral : True/False
 type BoolLiteral struct {
-	Token *token.Token
-	Value bool
+	Token     *token.Token
+	Value     bool
+	targetReg int
 }
 
 func (bl *BoolLiteral) TokenLiteral() string                        { return bl.Token.Literal }
@@ -2050,11 +2257,22 @@ func (bl *BoolLiteral) GetType(symTable *st.SymbolTable) types.Type { return typ
 func (bl *BoolLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	return errors
 }
+func (bl *BoolLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	bl.targetReg = ir.NewRegister()
+	operandValue := 0
+	if bl.Value {
+		operandValue = 1
+	} // set operand #1 if the boolean value is true
+	instruction := ir.NewMov(bl.targetReg, operandValue, ir.AL, ir.IMMEDIATE)
+	instructions = append(instructions, instruction)
+	return instructions
+}
 
 // IntLiteral : number (integer)
 type IntLiteral struct {
-	Token *token.Token
-	Value int64
+	Token     *token.Token
+	Value     int64
+	targetReg int
 }
 
 func (il *IntLiteral) TokenLiteral() string                        { return il.Token.Literal }
@@ -2063,11 +2281,19 @@ func (il *IntLiteral) GetType(symTable *st.SymbolTable) types.Type { return type
 func (il *IntLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	return errors
 }
+func (il *IntLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	il.targetReg = ir.NewRegister()
+	intValue := int(il.Value)
+	instruction := ir.NewMov(il.targetReg, intValue, ir.AL, ir.IMMEDIATE)
+	instructions = append(instructions, instruction)
+	return instructions
+}
 
 // IdentLiteral : identifier
 type IdentLiteral struct {
-	Token *token.Token
-	Id    string
+	Token     *token.Token
+	Id        string
+	targetReg int
 }
 
 func (idl *IdentLiteral) TokenLiteral() string { return idl.Token.Literal }
