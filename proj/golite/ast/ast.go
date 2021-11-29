@@ -831,7 +831,7 @@ func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 
 func (a *Assignment) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	var instruction ir.Instruction
-	exprReg := a.Expr.targetReg
+	exprReg := a.Expr.GetTargetReg()
 	if a.Lvalue.Idents == nil || len(a.Lvalue.Idents) == 0 {
 		varName := a.Lvalue.Ident.TokenLiteral()
 		if symTable.CheckGlobalVariable(varName) {
@@ -839,13 +839,13 @@ func (a *Assignment) TranslateToILoc(instructions []ir.Instruction, symTable *st
 			instruction = ir.NewStr(exprReg, -1, -1, varName, ir.GLOBALVAR)
 		} else {
 			// base type assignment
-			lvReg := a.Lvalue.targetReg
+			lvReg := a.Lvalue.GetTargetReg()
 			instruction = ir.NewMov(lvReg, exprReg, ir.AL, ir.REGISTER)
 		}
 	} else {
 		// struct assignment
-		structAddr := a.Lvalue.targetReg
-		field := a.Lvalue.Idents[len(a.Lvalue.Idents) - 1].TokenLiteral()
+		structAddr := a.Lvalue.GetTargetReg()
+		field := a.Lvalue.Idents[len(a.Lvalue.Idents)-1].TokenLiteral()
 		instruction = ir.NewLoadRef(exprReg, structAddr, field)
 	}
 	instructions = append(instructions, instruction)
@@ -2475,3 +2475,5 @@ func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable
 func (idl *IdentLiteral) GetTargetReg() int {
 	return idl.targetReg
 }
+
+func NewIdentLiteral(tok *token.Token, id string) IdentLiteral { return IdentLiteral{tok, id, -1} }

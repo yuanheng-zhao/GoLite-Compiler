@@ -115,7 +115,8 @@ func packageStmt(p *Parser) *ast.Package {
 		return nil
 	}
 
-	node := ast.NewPackage(ast.IdentLiteral{&idTok, idTok.Literal})
+	//node := ast.NewPackage(ast.IdentLiteral{&idTok, idTok.Literal, })
+	node := ast.NewPackage(ast.NewIdentLiteral(&idTok, idTok.Literal))
 	node.Token = &pacTok
 	return node
 }
@@ -140,7 +141,8 @@ func importStmt(p *Parser) *ast.Import {
 		return nil
 	}
 
-	node := ast.NewImport(ast.IdentLiteral{&fmtTok, fmtTok.Literal})
+	//node := ast.NewImport(ast.IdentLiteral{&fmtTok, fmtTok.Literal})
+	node := ast.NewImport(ast.NewIdentLiteral(&fmtTok, fmtTok.Literal))
 	node.Token = &impTok
 	return node
 }
@@ -187,7 +189,8 @@ func typeDeclaration(p *Parser) *ast.TypeDeclaration {
 		return nil
 	}
 
-	node := ast.NewTypeDeclaration(ast.IdentLiteral{&idTok, idTok.Literal}, astFields)
+	//node := ast.NewTypeDeclaration(ast.IdentLiteral{&idTok, idTok.Literal}, astFields)
+	node := ast.NewTypeDeclaration(ast.NewIdentLiteral(&idTok, idTok.Literal), astFields)
 	node.Token = &typTok
 	return node
 }
@@ -230,7 +233,8 @@ func decl(p *Parser) *ast.Decl {
 	if astType == nil {
 		return nil
 	}
-	node := ast.NewDecl(ast.IdentLiteral{&idTok, idTok.Literal}, astType)
+	//node := ast.NewDecl(ast.IdentLiteral{&idTok, idTok.Literal}, astType)
+	node := ast.NewDecl(ast.NewIdentLiteral(&idTok, idTok.Literal), astType)
 	node.Token = &idTok
 	return node
 }
@@ -308,13 +312,15 @@ func ids(p *Parser) *ast.Ids {
 		return nil
 	}
 
-	ids = append(ids, ast.IdentLiteral{&idTokFirst, idTokFirst.Literal})
+	//ids = append(ids, ast.IdentLiteral{&idTokFirst, idTokFirst.Literal})
+	ids = append(ids, ast.NewIdentLiteral(&idTokFirst, idTokFirst.Literal))
 	for {
 		if _, match := p.match(ct.COMMA); !match {
 			break
 		}
 		if idTok, match := p.match(ct.ID); match {
-			ids = append(ids, ast.IdentLiteral{&idTok, idTok.Literal})
+			//ids = append(ids, ast.IdentLiteral{&idTok, idTok.Literal})
+			ids = append(ids, ast.NewIdentLiteral(&idTok, idTok.Literal))
 		} else {
 			return nil
 		}
@@ -372,7 +378,8 @@ func function(p *Parser) *ast.Function {
 		return nil
 	}
 
-	node := ast.NewFunction(ast.IdentLiteral{&idTok, idTok.Literal}, paras, retTyp, decls, stmts)
+	//node := ast.NewFunction(ast.IdentLiteral{&idTok, idTok.Literal}, paras, retTyp, decls, stmts)
+	node := ast.NewFunction(ast.NewIdentLiteral(&idTok, idTok.Literal), paras, retTyp, decls, stmts)
 	node.Token = &funcTok
 	return node
 }
@@ -560,7 +567,8 @@ func read(p *Parser) *ast.Read {
 		return nil
 	}
 
-	node := ast.NewRead(ast.IdentLiteral{&idTok, idTok.Literal})
+	//node := ast.NewRead(ast.IdentLiteral{&idTok, idTok.Literal})
+	node := ast.NewRead(ast.NewIdentLiteral(&idTok, idTok.Literal))
 	node.Token = &fmtTok
 	return node
 }
@@ -595,7 +603,8 @@ func print(p *Parser) *ast.Print {
 		return nil
 	}
 
-	node := ast.NewPrint(printTok.Literal, ast.IdentLiteral{&idTok, idTok.Literal})
+	//node := ast.NewPrint(printTok.Literal, ast.IdentLiteral{&idTok, idTok.Literal})
+	node := ast.NewPrint(printTok.Literal, ast.NewIdentLiteral(&idTok, idTok.Literal))
 	node.Token = &fmtTok
 	return node
 }
@@ -696,7 +705,8 @@ func invocation(p *Parser) *ast.Invocation {
 		return nil
 	}
 
-	node := ast.NewInvocation(ast.IdentLiteral{&idTok, idTok.Literal}, arg)
+	//node := ast.NewInvocation(ast.IdentLiteral{&idTok, idTok.Literal}, arg)
+	node := ast.NewInvocation(ast.NewIdentLiteral(&idTok, idTok.Literal), arg)
 	node.Token = &idTok
 	return node
 }
@@ -747,13 +757,15 @@ func lValue(p *Parser) *ast.LValue {
 			break
 		}
 		if id, match := p.match(ct.ID); match {
-			ids = append(ids, ast.IdentLiteral{&id, id.Literal})
+			//ids = append(ids, ast.IdentLiteral{&id, id.Literal})
+			ids = append(ids, ast.NewIdentLiteral(&id, id.Literal))
 		} else {
 			return nil
 		}
 	}
 
-	node := ast.NewLvalue(ast.IdentLiteral{&idTok, idTok.Literal}, ids)
+	//node := ast.NewLvalue(ast.IdentLiteral{&idTok, idTok.Literal}, ids)
+	node := ast.NewLvalue(ast.NewIdentLiteral(&idTok, idTok.Literal), ids)
 	node.Token = &idTok
 	return node
 }
@@ -978,7 +990,8 @@ func selectorTerm(p *Parser) *ast.SelectorTerm {
 		if idTok, match = p.match(ct.ID); !match {
 			return nil
 		}
-		ids = append(ids, ast.IdentLiteral{&idTok, idTok.Literal})
+		//ids = append(ids, ast.IdentLiteral{&idTok, idTok.Literal})
+		ids = append(ids, ast.NewIdentLiteral(&idTok, idTok.Literal))
 	}
 
 	node := ast.NewSelectorTerm(facTok, ids)
