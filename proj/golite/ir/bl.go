@@ -28,7 +28,7 @@ func (instr *Bl) SetLabel(newLabel string) {}
 func (instr *Bl) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(fmt.Sprintf("bl %s", instr.label))
+	out.WriteString(fmt.Sprintf("    bl %s", instr.label))
 
 	return out.String()
 }

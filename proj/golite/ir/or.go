@@ -66,7 +66,7 @@ func (instr *Or) String() string {
 	}
 	operand2   := fmt.Sprintf("%v%v",prefix, instr.operand)
 
-	out.WriteString(fmt.Sprintf("or %s,%s,%s",targetReg,sourceReg,operand2))
+	out.WriteString(fmt.Sprintf("    or %s,%s,%s",targetReg,sourceReg,operand2))
 
 	return out.String()
 

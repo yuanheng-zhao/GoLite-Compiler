@@ -32,6 +32,6 @@ func (instr *Println) SetLabel(newLabel string) {}
 func (instr *Println) String() string {
 	var out bytes.Buffer
 	sourceRegister := fmt.Sprintf("r%v",instr.sourceReg)
-	out.WriteString(fmt.Sprintf("println %s",sourceRegister))
+	out.WriteString(fmt.Sprintf("    println %s",sourceRegister))
 	return out.String()
 }

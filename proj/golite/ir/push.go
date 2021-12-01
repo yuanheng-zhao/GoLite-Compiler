@@ -43,7 +43,7 @@ func (instr *Push) String() string {
 		strSource = strSource + "r" + strconv.Itoa(src)
 	}
 
-	out.WriteString(fmt.Sprintf("push {%s}",strSource))
+	out.WriteString(fmt.Sprintf("    push {%s}",strSource))
 
 	return out.String()
 }

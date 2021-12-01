@@ -65,7 +65,7 @@ func (instr *Not) String() string {
 	}
 	operand2   = fmt.Sprintf("%v%v",prefix, instr.operand)
 
-	out.WriteString(fmt.Sprintf("not %s,%s",targetReg,operand2))
+	out.WriteString(fmt.Sprintf("    not %s,%s",targetReg,operand2))
 
 	return out.String()
 

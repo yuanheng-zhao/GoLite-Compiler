@@ -43,7 +43,7 @@ func (instr *Pop) String() string {
 		strSource = strSource + "r" + strconv.Itoa(src)
 	}
 
-	out.WriteString(fmt.Sprintf("pop {%s}",strSource))
+	out.WriteString(fmt.Sprintf("    pop {%s}",strSource))
 
 	return out.String()
 }
