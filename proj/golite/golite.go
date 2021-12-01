@@ -25,7 +25,6 @@ func StartCompile(ctx ct.CompilerContext) {
 			fmt.Println(instruction.String())
 		}
 	}
-
 }
 
 func main() {

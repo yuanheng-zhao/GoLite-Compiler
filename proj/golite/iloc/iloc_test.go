@@ -1,8 +1,9 @@
-package ir
+package iloc
 
 import (
 	"fmt"
 	ct "proj/golite/context"
+	"proj/golite/ir"
 	"proj/golite/parser"
 	"proj/golite/sa"
 	"proj/golite/scanner"
@@ -22,7 +23,7 @@ func Test1(t *testing.T) {
 		t.Errorf("\nExpected: returned symbol table; Got nil\n")
 	}
 
-	globalFuncFrag := ast.TranslateToILocFunc([]*FuncFrag{}, globalSymTable)
+	globalFuncFrag := ast.TranslateToILocFunc([]*ir.FuncFrag{}, globalSymTable)
 	if globalFuncFrag == nil {
 		t.Errorf("\nExpected: returned FuncFrag; Got nil\n")
 	}
