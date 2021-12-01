@@ -238,7 +238,10 @@ func (td *TypeDeclaration) PerformSABuild(errors []string, symTable *st.SymbolTa
 }
 func (td *TypeDeclaration) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// objective: none
-	errors2 := td.Fields.TypeCheck(errors, td.st)
+	//errors2 := td.Fields.TypeCheck(errors, td.st)
+	scopeSymTable := symTable.Contains(td.Ident.TokenLiteral()).GetScopeST()
+	errors2 := td.Fields.TypeCheck(errors, scopeSymTable)
+
 	errors = append(errors, errors2...)
 	return errors
 }
@@ -514,7 +517,9 @@ func (fs *Functions) TranslateToILoc(instructions []ir.Instruction, symTable *st
 }
 func (fs *Functions) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.SymbolTable) []*ir.FuncFrag {
 	for _, fun := range fs.Functions {
-		funcFrag = fun.TranslateToILocFunc(funcFrag, fun.st)
+		//funcFrag = fun.TranslateToILocFunc(funcFrag, fun.st)
+		scopeSt := symTable.Contains(fun.Ident.TokenLiteral()).GetScopeST()
+		funcFrag = fun.TranslateToILocFunc(funcFrag, scopeSt)
 	}
 	return funcFrag
 }
