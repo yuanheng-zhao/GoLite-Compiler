@@ -1,0 +1,14 @@
+package main;
+import "fmt";
+func main () {
+    var a int;
+    var b int;
+    b = 3;
+    a = b + 6;
+    fmt.Print(a);
+
+    for (b > 0) {
+        b = b - 1;
+        fmt.Print(b);
+    }
+}

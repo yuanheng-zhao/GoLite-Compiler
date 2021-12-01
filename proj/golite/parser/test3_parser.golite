@@ -1,0 +1,30 @@
+package main;
+import "fmt";
+
+type apple struct {
+    a int;
+    b bool;
+};
+
+type orange struct {
+    c int;
+    d *apple;
+};
+
+var ian int;
+var jonathan, stellar bool;
+
+func main (para1 int, para2 int, para3 *orange) int {
+    var macbook int;
+    var ipad bool;
+    var iphone *apple;
+
+    macbook = 1;
+    para3.c = macbook;
+
+    if (ipad == true) {
+        fmt.Print(macbook);
+    } else {
+        fmt.Scan(&ian);
+    }
+}

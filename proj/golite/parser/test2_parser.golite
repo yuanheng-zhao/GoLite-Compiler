@@ -1,0 +1,6 @@
+package main;
+import "fmt";
+func main () {
+    var b bool;
+    b = true ||false&& (true ==true);
+}

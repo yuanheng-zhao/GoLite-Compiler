@@ -1,64 +1,10 @@
 package scanner
 
 import (
-	"bufio"
+	ct "proj/golite/context"
 	"proj/golite/token"
-
-	// "io"
-	"os"
 	"testing"
 )
-
-// func Test1(t *testing.T) {
-// 	// s1 := "This is a test string"
-
-// 	f_obj, _ := os.Open("test.golite")
-// 	var r *bufio.Reader
-// 	r = bufio.NewReader(f_obj)
-// 	c, _, _ := r.ReadRune()
-// 	c, _, _ = r.ReadRune()
-// 	c, _, _ = r.ReadRune()
-// 	r.UnreadRune()
-
-// 	c, _, _ = r.ReadRune()
-// 	d := string(c)
-// 	fmt.Println(d)
-// }
-
-// func Test2(t *testing.T) {
-// 	f_obj, _ := os.Open("test.golite")
-// 	var r *bufio.Reader
-// 	r = bufio.NewReader(f_obj)
-// 	s := New(r)
-// 	x, _, err := s.reader.ReadRune()
-// 	if err != nil && err == io.EOF {
-// 		fmt.Println("EOF FOUND!")
-// 		fmt.Println(err)
-// 	} else {
-// 		fmt.Println(x)
-// 	}
-
-// 	x, _, err = s.reader.ReadRune()
-// 	if err != nil && err == io.EOF {
-// 		fmt.Println("EOF FOUND!")
-// 		fmt.Println(err)
-// 	} else {
-// 		fmt.Println(x)
-// 	}
-// }
-
-// func Test3(t *testing.T) {
-// 	test_map := make(map[string]int)
-// 	test_map["\""] = 999
-// 	f_obj, _ := os.Open("test.golite")
-// 	var r *bufio.Reader
-// 	r = bufio.NewReader(f_obj)
-// 	c, _, _ := r.ReadRune()
-// 	d := string(c)
-
-// 	fmt.Println(test_map[d])
-
-// }
 
 type ExpectedResult struct {
 	expectedType    token.TokenType
@@ -82,16 +28,38 @@ func VerifyTest(t *testing.T, tests []ExpectedResult, scanner *Scanner) {
 	}
 }
 
+type ExpectedResultFull struct {
+	expectedType    token.TokenType
+	expectedLiteral string
+	expectedLineNum int
+}
+
+func VerifyTestFull(t *testing.T, tests []ExpectedResultFull, scanner *Scanner) {
+
+	for i, tt := range tests {
+		tok := scanner.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("FAILED[%d] - incorrect token.\nexpected=%v\ngot=%v\n",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("FAILED[%d] - incorrect token literal.\nexpected=%v\ngot=%v\n",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+
+		if tok.LineNum != tt.expectedLineNum {
+			t.Fatalf("FAILED[%d] - incorrect token lineNum.\nexpected=%v\ngot=%v\n",
+				i, tt.expectedLineNum, tok.LineNum)
+		}
+	}
+}
+
 func Test1(t *testing.T) {
-	// s1 := "This is a test string"
+	ctx := ct.New(false, false, false, "test1.golite")
+	scanner := New(*ctx)
 
-	f_obj, _ := os.Open("test1.golite")
-	reader := bufio.NewReader(f_obj)
-	scanner := New(reader)
-
-	// 	package test1;
-	// import "fmt";
-	// a = 3;
 	expected := []ExpectedResult{
 		{token.PACK, "package"},
 		{token.ID, "test1"},
@@ -108,19 +76,33 @@ func Test1(t *testing.T) {
 		{token.SEMICOLON, ";"},
 	}
 
+	expectedFull := []ExpectedResultFull{
+		{token.PACK, "package", 1},
+		{token.ID, "test1", 1},
+		{token.SEMICOLON, ";", 1},
+		{token.COMMENT, "//", 1},
+		{token.IMPORT, "import", 3},
+		{token.QTDMARK, "\"", 3},
+		{token.FMT, "fmt", 3},
+		{token.QTDMARK, "\"", 3},
+		{token.SEMICOLON, ";", 3},
+		{token.ID, "a", 4},
+		{token.ASSIGN, "=", 4},
+		{token.NUM, "3", 4},
+		{token.SEMICOLON, ";", 4},
+	}
+
 	VerifyTest(t, expected, scanner)
+
+	// test with line number
+	scanner = New(*ctx)
+	VerifyTestFull(t, expectedFull, scanner)
 }
 
 func Test2(t *testing.T) {
-	// s1 := "This is a test string"
+	ctx := ct.New(false, false, false, "test2.golite")
+	scanner := New(*ctx)
 
-	f_obj, _ := os.Open("test2.golite")
-	reader := bufio.NewReader(f_obj)
-	scanner := New(reader)
-
-	// 	package test1;
-	// import "fmt";
-	// a = 3;
 	expected := []ExpectedResult{
 		{token.PACK, "package"},
 		{token.ID, "main"},
@@ -161,15 +143,9 @@ func Test2(t *testing.T) {
 }
 
 func Test3(t *testing.T) {
-	// s1 := "This is a test string"
+	ctx := ct.New(false, false, false, "test3.golite")
+	scanner := New(*ctx)
 
-	f_obj, _ := os.Open("test3.golite")
-	reader := bufio.NewReader(f_obj)
-	scanner := New(reader)
-
-	// 	package test1;
-	// import "fmt";
-	// a = 3;
 	expected := []ExpectedResult{
 		{token.ID, "printa"},
 		{token.NUM, "2"},
@@ -207,11 +183,8 @@ func Test3(t *testing.T) {
 }
 
 func Test4(t *testing.T) {
-	// s1 := "This is a test string"
-
-	f_obj, _ := os.Open("test4.golite")
-	reader := bufio.NewReader(f_obj)
-	scanner := New(reader)
+	ctx := ct.New(false, false, false, "test4.golite")
+	scanner := New(*ctx)
 
 	expected := []ExpectedResult{
 		{token.PACK, "package"},
