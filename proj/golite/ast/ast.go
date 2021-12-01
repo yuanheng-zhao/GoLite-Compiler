@@ -1572,9 +1572,15 @@ func (exp *Expression) GetType(symTable *st.SymbolTable) types.Type {
 
 	for _, rTerm := range exp.Rights {
 		rightType := rTerm.GetType(symTable)
-		if leftType != rightType {
+		if rightType != types.BoolTySig {
 			return types.UnknownTySig
 		}
+	}
+	if exp.Rights != nil && len(exp.Rights) > 0 {
+		if leftType != types.BoolTySig {
+			return types.UnknownTySig
+		}
+		return types.BoolTySig
 	}
 	return leftType
 }
@@ -1651,9 +1657,15 @@ func (bt *BoolTerm) GetType(symTable *st.SymbolTable) types.Type {
 
 	for _, rTerm := range bt.Rights {
 		rightType := rTerm.GetType(symTable)
-		if leftType != rightType {
+		if rightType != types.BoolTySig {
 			return types.UnknownTySig
 		}
+	}
+	if bt.Rights != nil && len(bt.Rights) > 0 {
+		if leftType != types.BoolTySig {
+			return types.UnknownTySig
+		}
+		return types.BoolTySig
 	}
 	return leftType
 }
@@ -1736,7 +1748,11 @@ func (et *EqualTerm) GetType(symTable *st.SymbolTable) types.Type {
 			return types.UnknownTySig
 		}
 	}
-	return leftType
+	if et.Rights != nil && len(et.Rights) > 0 {
+		return types.BoolTySig
+	} else {
+		return leftType
+	}
 }
 func (et *EqualTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	errors = et.Left.TypeCheck(errors, symTable)
@@ -1805,9 +1821,15 @@ func (rt *RelationTerm) GetType(symTable *st.SymbolTable) types.Type {
 
 	for _, rTerm := range rt.Rights {
 		rightType := rTerm.GetType(symTable)
-		if leftType != rightType {
+		if rightType != types.IntTySig {
 			return types.UnknownTySig
 		}
+	}
+	if rt.Rights != nil && len(rt.Rights) > 0 {
+		if leftType == types.IntTySig {
+			return types.BoolTySig
+		}
+		return types.UnknownTySig
 	}
 	return leftType
 }
@@ -1899,9 +1921,15 @@ func (st *SimpleTerm) GetType(symTable *st.SymbolTable) types.Type {
 
 	for _, rTerm := range st.Rights {
 		rightType := rTerm.GetType(symTable)
-		if leftType != rightType {
+		if rightType != types.IntTySig {
 			return types.UnknownTySig
 		}
+	}
+	if st.Rights != nil && len(st.Rights) > 0 {
+		if leftType == types.IntTySig {
+			return types.IntTySig
+		}
+		return types.UnknownTySig
 	}
 	return leftType
 }
@@ -1984,9 +2012,15 @@ func (t *Term) GetType(symTable *st.SymbolTable) types.Type {
 
 	for _, rTerm := range t.Rights {
 		rightType := rTerm.GetType(symTable)
-		if leftType != rightType {
+		if rightType != types.IntTySig {
 			return types.UnknownTySig
 		}
+	}
+	if t.Rights != nil && len(t.Rights) > 0 {
+		if leftType == types.IntTySig {
+			return types.IntTySig
+		}
+		return types.UnknownTySig
 	}
 	return leftType
 }
