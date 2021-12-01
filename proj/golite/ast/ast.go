@@ -830,6 +830,8 @@ func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 }
 
 func (a *Assignment) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	instructions = a.Lvalue.TranslateToILoc(instructions, symTable)
+	instructions = a.Expr.TranslateToILoc(instructions, symTable)
 	var instruction ir.Instruction
 	exprReg := a.Expr.GetTargetReg()
 	if a.Lvalue.Idents == nil || len(a.Lvalue.Idents) == 0 {
