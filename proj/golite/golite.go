@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	ct "proj/golite/context"
+	"proj/golite/ir"
 	ps "proj/golite/parser"
 	"proj/golite/sa"
 	sc "proj/golite/scanner"
@@ -15,8 +16,16 @@ func StartCompile(ctx ct.CompilerContext) {
 	scanner := sc.New(ctx)
 	parser := ps.New(*scanner)
 	ast := parser.Parse()
-	sa.PerformSA(ast)
-	fmt.Println(ast)
+	//fmt.Println(ast)
+	globalSymtabl := sa.PerformSA(ast)
+	globalFuncFrag := ast.TranslateToILocFunc([]*ir.FuncFrag{}, globalSymtabl)
+	for _, funcFrag := range globalFuncFrag {
+		instructions := funcFrag.Body
+		for _, instruction := range instructions {
+			fmt.Println(instruction.String())
+		}
+	}
+
 }
 
 func main() {
@@ -24,6 +33,7 @@ func main() {
 	// Define all optional flags for the compiler
 	lexOpt := flag.Bool("lex", false, "Send to standard-out the tokens from scanner.")
 	astOpt := flag.Bool("ast", false, "Send to standard-out the tokens from parser.")
+	ilocOpt := flag.Bool("iloc", false, "Send to standard-out the tokens from IR")
 	flag.Parse()
 	// Define the usage statement for the compiler
 	flag.Usage = func() {
@@ -34,7 +44,7 @@ func main() {
 	}
 
 	// Create the compiler configuration struct
-	ctx := ct.New(false, false, "")
+	ctx := ct.New(false, false, false, "")
 	//fmt.Println("os.Args    :", os.Args)
 	//fmt.Println("flag.Args():", flag.Args())
 
@@ -47,6 +57,7 @@ func main() {
 		ctx.SetSourcePath(flag.Arg(0))
 		ctx.SetLex(*lexOpt)
 		ctx.SetAst(*astOpt)
+		ctx.SetILoc(*ilocOpt)
 	}
 
 	// Check if the source file path exists
@@ -64,5 +75,7 @@ func main() {
 		parser := ps.New(*scanner)
 		ast := parser.Parse()
 		fmt.Println(ast.String())
+	} else if ctx.OutputILoc() {
+		StartCompile(*ctx)
 	}
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func Test1(t *testing.T) {
-	ctx := ct.New(false, false, "test1_parser.golite")
+	ctx := ct.New(false, false, false, "test1_parser.golite")
 	myScanner := scanner.New(*ctx)
 
 	// The expected result struct represents the token stream for the input source
@@ -57,7 +57,7 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	ctx := ct.New(false, false, "test2_parser.golite")
+	ctx := ct.New(false, false, false, "test2_parser.golite")
 	myScanner := scanner.New(*ctx)
 
 	// The expected result struct represents the token stream for the input source
@@ -109,7 +109,7 @@ func Test2(t *testing.T) {
 }
 
 func Test3(t *testing.T) {
-	ctx := ct.New(false, false, "test3_parser.golite")
+	ctx := ct.New(false, false, false, "test3_parser.golite")
 	myScanner := scanner.New(*ctx)
 
 	parser := New(*myScanner)
