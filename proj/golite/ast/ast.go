@@ -1532,6 +1532,7 @@ func (lv *LValue) TranslateToILoc(instructions []ir.Instruction, symTable *st.Sy
 	remainingBeforeLast := lv.Idents[:len(lv.Idents)-1]
 	source := lv.Ident.targetReg
 	for _, ident := range remainingBeforeLast {
+		instructions = ident.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
 		instruction := ir.NewLoadRef(target, source, ident.Id)
 		instructions = append(instructions, instruction)
@@ -1609,6 +1610,7 @@ func (exp *Expression) TranslateToILoc(instructions []ir.Instruction, symTable *
 
 	leftSource := exp.Left.targetReg
 	for _, rTerm := range exp.Rights {
+		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
 		// in this way, OperandTy is always REGISTER
 		instruction := ir.NewOr(target, leftSource, rTerm.targetReg, ir.REGISTER)
@@ -1687,6 +1689,7 @@ func (bt *BoolTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.
 
 	leftSource := bt.Left.targetReg
 	for _, rTerm := range bt.Rights {
+		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
 		// OperandTy is always REGISTER
 		instruction := ir.NewAnd(target, leftSource, rTerm.targetReg, ir.REGISTER)
@@ -1751,6 +1754,7 @@ func (et *EqualTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st
 
 	leftSource := et.Left.targetReg
 	for idx, rTerm := range et.Rights {
+		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		// Put into a new register the "false" value ("false" = 0) before the cmp
 		target := ir.NewRegister()
 		instruction1 := ir.NewMov(target, 0, ir.AL, ir.IMMEDIATE)
@@ -1839,6 +1843,7 @@ func (rt *RelationTerm) TranslateToILoc(instructions []ir.Instruction, symTable 
 
 	leftSource := rt.Left.targetReg
 	for idx, rTerm := range rt.Rights {
+		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		relationOperator := rt.RelationOperators[idx]
 		// Put into a new register the "false" value ("false" = 0) before the cmp
 		target := ir.NewRegister()
@@ -1932,6 +1937,7 @@ func (st *SimpleTerm) TranslateToILoc(instructions []ir.Instruction, symTable *s
 
 	leftSource := st.Left.targetReg
 	for idx, rTerm := range st.Rights {
+		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
 		var instruction ir.Instruction
 		if st.SimpleTermOperators[idx] == "+" {
@@ -2016,6 +2022,7 @@ func (t *Term) TranslateToILoc(instructions []ir.Instruction, symTable *st.Symbo
 
 	leftSource := t.Left.targetReg
 	for idx, rTerm := range t.Rights {
+		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
 		var instruction ir.Instruction
 		if t.TermOperators[idx] == "*" {
@@ -2176,6 +2183,7 @@ func (selt *SelectorTerm) TranslateToILoc(instructions []ir.Instruction, symTabl
 	// Factor.id / Factor.id.id / ...
 	source := selt.Fact.targetReg
 	for _, ident := range selt.Idents {
+		instructions = ident.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
 		instruction := ir.NewLoadRef(target, source, ident.Id)
 		instructions = append(instructions, instruction)
@@ -2467,15 +2475,23 @@ func (idl *IdentLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	return errors
 }
 func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
-	idl.targetReg = ir.NewRegister()
+	//idl.targetReg = ir.NewRegister()
+	//if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
+	//	instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
+	//	instructions = append(instructions, instruction)
+	//} else {
+	//	// if semantic analysis is correct, at here idl.id must appear in some symbol tables at or above the current level
+	//	sourceReg := symTable.PowerContains(idl.Id).GetRegId()
+	//	instruction := ir.NewMov(idl.targetReg, sourceReg, ir.AL, ir.REGISTER)
+	//	instructions = append(instructions, instruction)
+	//}
+
 	if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
 		instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
 		instructions = append(instructions, instruction)
 	} else {
-		// if semantic analysis is correct, at here idl.id must appear in some symbol tables at or above the current level
 		sourceReg := symTable.PowerContains(idl.Id).GetRegId()
-		instruction := ir.NewMov(idl.targetReg, sourceReg, ir.AL, ir.REGISTER)
-		instructions = append(instructions, instruction)
+		idl.targetReg = sourceReg
 	}
 	return instructions
 }
