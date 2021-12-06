@@ -71,6 +71,23 @@ func (p *Program) PerformSABuild(errors []string, symTable *st.SymbolTable) []st
 	errors = p.Import.PerformSABuild(errors, symTable)
 	errors = p.Types.PerformSABuild(errors, symTable)
 	errors = p.Declarations.PerformSABuild(errors, symTable)
+
+	// Add **new** global functions for creating an instance of a declared struct
+	newScopeSt := st.New(symTable, "new")
+	newScopeSt.ScopeParamNames = append(newScopeSt.ScopeParamNames, "structName")
+	newScopeSt.ScopeParamTys = append(newScopeSt.ScopeParamTys, types.StructTySig)
+	var newEntry st.Entry
+	newEntry = st.NewFuncEntry(types.StructTySig, newScopeSt)
+	symTable.Insert("new", &newEntry)
+
+	// Add **delete** global functions for deleting/releasing an instance of a declared struct
+	deleteScopeSt := st.New(symTable, "delete")
+	deleteScopeSt.ScopeParamNames = append(deleteScopeSt.ScopeParamNames, "structName")
+	deleteScopeSt.ScopeParamTys = append(deleteScopeSt.ScopeParamTys, types.StructTySig)
+	var deleteEntry st.Entry
+	deleteEntry = st.NewFuncEntry(types.StructTySig, deleteScopeSt)
+	symTable.Insert("delete", &deleteEntry)
+
 	errors = p.Functions.PerformSABuild(errors, symTable)
 	return errors
 }
