@@ -928,7 +928,7 @@ func (a *Assignment) TranslateToILoc(instructions []ir.Instruction, symTable *st
 		// struct assignment
 		structAddr := a.Lvalue.GetTargetReg()
 		field := a.Lvalue.Idents[len(a.Lvalue.Idents)-1].TokenLiteral()
-		instruction = ir.NewLoadRef(exprReg, structAddr, field)
+		instruction = ir.NewStrRef(exprReg, structAddr, field)
 	}
 	instructions = append(instructions, instruction)
 	return instructions
@@ -1264,6 +1264,12 @@ func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	return errors
 }
 func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	if invoc.Ident.TokenLiteral() == "delete" {
+		entry := symTable.PowerContains(invoc.Args.TokenLiteral())
+		delInst := ir.NewDelete(entry.GetRegId())
+		instructions = append(instructions, delInst)
+		return instructions
+	}
 	// push register values to stack, make space for parameter passing
 	arguments := invoc.Args.Exprs
 	pushReg := []int{}
@@ -2388,13 +2394,8 @@ func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 }
 func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	if ie.Ident.String() == "new" {
-		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.String())
+		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.TokenLiteral())
 		instructions = append(instructions, newInst)
-		return instructions
-	} else if ie.Ident.String() == "delete" {
-		entry := symTable.PowerContains(ie.InnerArgs.String())
-		delInst := ir.NewDelete(entry.GetRegId())
-		instructions = append(instructions, delInst)
 		return instructions
 	}
 	// push register values to stack, make space for parameter passing
