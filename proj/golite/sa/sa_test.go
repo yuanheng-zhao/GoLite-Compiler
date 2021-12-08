@@ -52,8 +52,8 @@ func Test3(t *testing.T) {
 		t.Errorf("\nExpected: returned symbol table; Got nil\n")
 	}
 
-	mainSt := symTable.Contains("main")
-	aEnt := mainSt.GetScopeST().Contains("a")
-	xEnt := aEnt.GetScopeST().Contains("x")
-	fmt.Println(xEnt) // Check the values by debugging
+	//mainSt := symTable.Contains("main")
+	//aEnt := mainSt.GetScopeST().Contains("b")
+	//xEnt := aEnt.GetScopeST().Contains("x")
+	//fmt.Println(xEnt) // Check the values by debugging
 }

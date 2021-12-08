@@ -619,6 +619,14 @@ func (f *Function) PerformSABuild(errors []string, symTable *st.SymbolTable) []s
 	funcName := f.Ident.TokenLiteral()
 	scopeSymTable := st.New(symTable, funcName)
 	f.st = scopeSymTable
+
+	// built-in delete
+	// in each function, append the parent of delete to the current scope st
+	// so that from the start to the end of the current function scope, we look for
+	// struct names inside this current scope (delete still in global st)
+	deleteEntry := symTable.PowerContains("delete")
+	deleteEntry.GetScopeST().Parent = scopeSymTable
+
 	if entry := symTable.Contains(funcName); entry != nil {
 		errors = append(errors, fmt.Sprintf("[%v]: function [%v] has been declared", f.Token.LineNum, funcName))
 	} else {
@@ -1237,6 +1245,10 @@ func (invoc *Invocation) String() string {
 }
 func (invoc *Invocation) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
 	// objective: none
+	if invoc.Ident.String() == "delete" { // built-in delete
+		// TO-DO : check the struct name has been declared
+		// OK if unmodified
+	}
 	return errors
 }
 func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
@@ -1463,6 +1475,9 @@ func (args *Arguments) GetType(symTable *st.SymbolTable) types.Type {
 	return types.VoidTySig
 }
 func (args *Arguments) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+	if symTable.ScopeName == "delete" { // built-in delete as a special case
+
+	}
 	// used as parameters for calling a function
 	expectedTys := symTable.ScopeParamTys
 	paramNames := symTable.ScopeParamNames
@@ -1475,7 +1490,7 @@ func (args *Arguments) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 		errors = expr.TypeCheck(errors, symTable)
 		givenParamTy := expr.GetType(symTable)
 		if givenParamTy != expectedTys[idx] {
-			errors = append(errors, fmt.Sprintf("[%v]: Expected paramter %v type %v; given parameter %v type %v #{args.Exprs[idx]}",
+			errors = append(errors, fmt.Sprintf("[%v]: Expected paramter %v type %v; given parameter %v type %v",
 				args.Token.LineNum, paramNames[idx], expectedTys[idx], expr.String(), givenParamTy))
 		}
 	}
