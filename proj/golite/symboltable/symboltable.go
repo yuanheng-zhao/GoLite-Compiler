@@ -98,6 +98,10 @@ func (st *SymbolTable) GetCopy(scopeName string, parentSt *SymbolTable) *SymbolT
 	return instanceSt
 }
 
+func (st *SymbolTable) HashTable() map[string]*Entry {
+	return st.htable
+}
+
 type Entry interface {
 	SetType(t types.Type)
 	SetValue(s string)

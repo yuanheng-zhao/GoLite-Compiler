@@ -1,0 +1,19 @@
+package main;
+import "fmt";
+type foo struct {
+    x int;
+    y bool;
+};
+func main () {
+    var a int;
+    var b int;
+    var c bool;
+    var d *foo;
+    var e int;
+    a = 7;
+
+    d = new(foo);
+    d.x = 0;
+
+    fmt.Print(a);
+}
