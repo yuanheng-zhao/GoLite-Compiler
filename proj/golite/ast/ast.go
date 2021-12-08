@@ -1267,8 +1267,8 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 	// push register values to stack, make space for parameter passing
 	arguments := invoc.Args.Exprs
 	pushReg := []int{}
-	for i := 1; i <= len(arguments); i++ {
-		pushReg = append(pushReg, i)
+	for i := 0; i < len(arguments); i++ {
+		pushReg = append(pushReg, i + 1)
 	}
 	if len(pushReg) != 0 {
 		pushInstruct := ir.NewPush(pushReg)
@@ -1280,8 +1280,8 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 	}
 
 	// move argument to dedicated registers
-	for i := 1; i <= len(arguments); i++ {
-		movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.AL, ir.REGISTER)
+	for i := 0; i < len(arguments); i++ {
+		movInstruct := ir.NewMov(i + 1, arguments[i].targetReg, ir.AL, ir.REGISTER)
 		instructions = append(instructions, movInstruct)
 	}
 
@@ -2391,8 +2391,8 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	// push register values to stack, make space for parameter passing
 	arguments := ie.InnerArgs.Exprs
 	pushReg := []int{}
-	for i := 1; i < len(arguments); i++ {
-		pushReg = append(pushReg, i)
+	for i := 0; i < len(arguments); i++ {
+		pushReg = append(pushReg, i + 1)
 	}
 	if len(pushReg) != 0 {
 		pushInstruct := ir.NewPush(pushReg)
@@ -2404,8 +2404,8 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	}
 
 	// move argument to dedicated registers
-	for i := 1; i <= len(arguments); i++ {
-		movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.AL, ir.REGISTER)
+	for i := 0; i < len(arguments); i++ {
+		movInstruct := ir.NewMov(i + 1, arguments[i].targetReg, ir.AL, ir.REGISTER)
 		instructions = append(instructions, movInstruct)
 	}
 
