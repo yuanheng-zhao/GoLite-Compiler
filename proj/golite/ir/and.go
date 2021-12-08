@@ -70,3 +70,8 @@ func (instr *And) String() string {
 	return out.String()
 
 }
+
+func (instr *And) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+	return inst
+}

@@ -38,3 +38,8 @@ func (instr *New) String() string {
 	out.WriteString(fmt.Sprintf("    new %s,%s",targetReg,instr.dataType))
 	return out.String()
 }
+
+func (instr *New) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+	return inst
+}

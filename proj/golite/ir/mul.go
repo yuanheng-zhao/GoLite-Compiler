@@ -51,3 +51,8 @@ func (instr *Mul) String() string {
 	return out.String()
 
 }
+
+func (instr *Mul) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+	return inst
+}

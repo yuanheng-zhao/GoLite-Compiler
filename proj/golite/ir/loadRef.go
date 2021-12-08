@@ -49,3 +49,8 @@ func (instr *LoadRef) String() string {
 
 	return out.String()
 }
+
+func (instr *LoadRef) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+	return inst
+}

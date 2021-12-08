@@ -35,3 +35,8 @@ func (instr *Delete) String() string {
 	out.WriteString(fmt.Sprintf("    delete %s",sourceRegister))
 	return out.String()
 }
+
+func (instr *Delete) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+	return inst
+}
