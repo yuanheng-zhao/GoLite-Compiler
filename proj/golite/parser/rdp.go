@@ -40,6 +40,9 @@ func (p *Parser) NextToken() ct.Token {
 	if p.currIndex >= len(p.tokens) {
 		return ct.Token{ct.ILLEGAL, "illegal", -1}
 	}
+	for p.tokens[p.currIndex].Type == ct.COMMENT {
+		p.currIndex += 1
+	}
 	return p.tokens[p.currIndex]
 }
 
