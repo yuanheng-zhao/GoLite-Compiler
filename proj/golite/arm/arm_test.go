@@ -35,6 +35,6 @@ func Test1(t *testing.T) {
 	//		fmt.Println(instruction.String())
 	//	}
 	//}
-	resStr := TranslateToArm(globalFuncFrag, globalSymTable)
+	resStr := TranslateToAssembly(globalFuncFrag, globalSymTable)
 	fmt.Println(resStr)
 }

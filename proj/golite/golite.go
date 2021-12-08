@@ -20,7 +20,7 @@ func StartCompile(ctx ct.CompilerContext) {
 	//fmt.Println(ast)
 	globalSymtabl := sa.PerformSA(ast)
 	globalFuncFrag := ast.TranslateToILocFunc([]*ir.FuncFrag{}, globalSymtabl)
-	armInstructString := arm.TranslateToArm(globalFuncFrag, globalSymtabl)
+	armInstructString := arm.TranslateToAssembly(globalFuncFrag, globalSymtabl)
 	fmt.Println(armInstructString)
 	//for _, funcFrag := range globalFuncFrag {
 	//	instructions := funcFrag.Body
