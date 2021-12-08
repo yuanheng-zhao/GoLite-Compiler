@@ -1245,13 +1245,14 @@ func (invoc *Invocation) String() string {
 }
 func (invoc *Invocation) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
 	// objective: none
+	return errors
+}
+func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	if invoc.Ident.String() == "delete" { // built-in delete
 		// TO-DO : check the struct name has been declared
 		// OK if unmodified
 	}
-	return errors
-}
-func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
+
 	// check whether function is declared
 	funcName := invoc.Ident.TokenLiteral()
 	entry := invoc.getFuncEntry(symTable)
@@ -1265,7 +1266,7 @@ func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []
 }
 func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	if invoc.Ident.TokenLiteral() == "delete" {
-		entry := symTable.PowerContains(invoc.Args.TokenLiteral())
+		entry := symTable.PowerContains(invoc.Args.Exprs[0].TokenLiteral())
 		delInst := ir.NewDelete(entry.GetRegId())
 		instructions = append(instructions, delInst)
 		return instructions
@@ -1274,7 +1275,7 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 	arguments := invoc.Args.Exprs
 	pushReg := []int{}
 	for i := 0; i < len(arguments); i++ {
-		pushReg = append(pushReg, i + 1)
+		pushReg = append(pushReg, i+1)
 	}
 	if len(pushReg) != 0 {
 		pushInstruct := ir.NewPush(pushReg)
@@ -1287,7 +1288,7 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 
 	// move argument to dedicated registers
 	for i := 0; i < len(arguments); i++ {
-		movInstruct := ir.NewMov(i + 1, arguments[i].targetReg, ir.AL, ir.REGISTER)
+		movInstruct := ir.NewMov(i+1, arguments[i].targetReg, ir.AL, ir.REGISTER)
 		instructions = append(instructions, movInstruct)
 	}
 
@@ -1584,8 +1585,8 @@ func (lv *LValue) getStructEntry(symTable *st.SymbolTable) st.Entry {
 }
 func (lv *LValue) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = lv.Ident.TranslateToILoc(instructions, symTable)
+	lv.targetReg = lv.Ident.targetReg
 	if lv.Idents == nil || len(lv.Idents) == 0 {
-		lv.targetReg = lv.Ident.targetReg
 		return instructions
 	}
 	// id.id / id.id.id / ...
@@ -2394,7 +2395,7 @@ func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 }
 func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	if ie.Ident.String() == "new" {
-		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.TokenLiteral())
+		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.Exprs[0].TokenLiteral())
 		instructions = append(instructions, newInst)
 		return instructions
 	}
@@ -2402,7 +2403,7 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	arguments := ie.InnerArgs.Exprs
 	pushReg := []int{}
 	for i := 0; i < len(arguments); i++ {
-		pushReg = append(pushReg, i + 1)
+		pushReg = append(pushReg, i+1)
 	}
 	if len(pushReg) != 0 {
 		pushInstruct := ir.NewPush(pushReg)
@@ -2415,7 +2416,7 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 
 	// move argument to dedicated registers
 	for i := 0; i < len(arguments); i++ {
-		movInstruct := ir.NewMov(i + 1, arguments[i].targetReg, ir.AL, ir.REGISTER)
+		movInstruct := ir.NewMov(i+1, arguments[i].targetReg, ir.AL, ir.REGISTER)
 		instructions = append(instructions, movInstruct)
 	}
 

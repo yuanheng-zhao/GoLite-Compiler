@@ -170,10 +170,11 @@ func (fe *FuncEntry) GetRegId() int { return -1 }
 type StructEntry struct {
 	ty      types.Type
 	scopeSt *SymbolTable
+	regId   int
 }
 
 func NewStructEntry(symTable *SymbolTable) *StructEntry {
-	return &StructEntry{types.StructTySig, symTable}
+	return &StructEntry{types.StructTySig, symTable, ir.NewRegister()}
 }
 func (se *StructEntry) GetEntryType() types.Type {
 	return se.ty // types.StructTySig
@@ -187,7 +188,7 @@ func (se *StructEntry) GetReturnTy() types.Type {
 	// dummy one. never use
 	return types.UnknownTySig
 }
-func (se *StructEntry) GetRegId() int { return -1 }
+func (se *StructEntry) GetRegId() int { return se.regId }
 
 //func (se *StructEntry) GetCopy(parentSt *SymbolTable) *StructEntry {
 //	return &StructEntry{se.ty, se.scopeSt.GetCopy(se.scopeSt.ProtoName, parentSt)}
