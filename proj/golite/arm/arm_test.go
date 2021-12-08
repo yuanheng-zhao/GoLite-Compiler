@@ -19,8 +19,7 @@ func Test1(t *testing.T) {
 	//fmt.Println(ast.String())
 
 	globalSymTable := sa.PerformSA(ast)
-	mainEnt := globalSymTable.Contains("main")
-	fmt.Println(mainEnt)
+	//mainEnt := globalSymTable.Contains("main")
 	if globalSymTable == nil {
 		t.Errorf("\nExpected: returned symbol table; Got nil\n")
 	}

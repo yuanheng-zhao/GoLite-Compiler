@@ -61,7 +61,6 @@ func TranslateToAssembly(funcfrags []*FuncFrag) []string {
 }
 
 func prologue(size int) []string {
-	fmt.Println("size inside prolo: ", size)
 	proInst := []string{}
 	proInst = append(proInst, "sub sp, sp, 16")
 	proInst = append(proInst, "stp x29, x30, [sp]")
@@ -80,10 +79,16 @@ func epilogue(size int) []string {
 }
 
 func NextAvailReg() int {
-	for id, val := range regList {
-		if val {
-			regList[id] = false
-			return id
+	//for id, val := range regList {
+	//	if val {
+	//		regList[id] = false
+	//		return id
+	//	}
+	//}
+	for i := 0; i < 32; i++ {
+		if regList[i] {
+			regList[i] = false
+			return i
 		}
 	}
 	return -1

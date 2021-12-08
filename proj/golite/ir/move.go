@@ -86,20 +86,21 @@ func (instr *Mov) String() string {
 
 func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int) []string {
 	instruction := []string{}
+	targetRegId := NextAvailReg()
 	var sourceRegId int
 	if instr.opty == IMMEDIATE {
-		instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", instr.target, instr.operand))
+		instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", targetRegId, instr.operand))
 	} else {
 		sourceRegId = NextAvailReg()
 		sourceOffset := funcVarDict[instr.operand]
 		instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
-		instruction = append(instruction, fmt.Sprintf("mov x%v, x%v", instr.target, sourceRegId))
+		instruction = append(instruction, fmt.Sprintf("mov x%v, x%v", targetRegId, sourceRegId))
 	}
 
 	targetOffset := funcVarDict[instr.target]
-	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", instr.target, targetOffset))
+	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
 
-	ReleaseReg(instr.target)
+	ReleaseReg(targetRegId)
 	if instr.opty == REGISTER {
 		ReleaseReg(sourceRegId)
 	}

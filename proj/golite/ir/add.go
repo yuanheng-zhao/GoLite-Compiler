@@ -90,7 +90,7 @@ func (instr *Add) TranslateToAssembly(funcVarDict map[int]int) []string {
 	// load operand 2
 	source2RegId := NextAvailReg()
 	if instr.opty == REGISTER {
-		source2Offset := funcVarDict[instr.sourceReg]
+		source2Offset := funcVarDict[instr.operand]
 		//addInst = append(addInst, "ldr x"+string(source2RegId)+", [x29, #"+string(source2Offset))
 		addInst = append(addInst, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
 	} else {
