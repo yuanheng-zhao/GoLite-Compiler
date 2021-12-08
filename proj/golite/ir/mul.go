@@ -53,6 +53,29 @@ func (instr *Mul) String() string {
 }
 
 func (instr *Mul) TranslateToAssembly(funcVarDict map[int]int) []string {
-	inst := []string{}
-	return inst
+	instruction := []string{}
+
+	// load operand 1
+	source1Offset := funcVarDict[instr.sourceReg1]
+	source1RegId := NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source1RegId, source1Offset))
+
+	// load operand 2
+	source2RegId := NextAvailReg()
+	source2Offset := funcVarDict[instr.sourceReg2]
+	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
+
+	// multiply
+	targetRegId := NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("mul x%v, x%v, x%v", targetRegId, source1RegId, source2RegId))
+
+	// store result
+	targetOffset := funcVarDict[instr.target]
+	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
+
+	ReleaseReg(source1RegId)
+	ReleaseReg(source2RegId)
+	ReleaseReg(targetRegId)
+
+	return instruction
 }

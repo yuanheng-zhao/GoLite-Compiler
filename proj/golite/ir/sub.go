@@ -73,7 +73,33 @@ func (instr *Sub) String() string {
 }
 
 func (instr *Sub) TranslateToAssembly(funcVarDict map[int]int) []string {
-	inst := []string{}
+	instruction := []string{}
 
-	return inst
+	// load operand 1
+	sourceOffset := funcVarDict[instr.sourceReg]
+	sourceRegId := NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
+
+	// load operand 2
+	source2RegId := NextAvailReg()
+	if instr.opty == REGISTER {
+		source2Offset := funcVarDict[instr.operand]
+		instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
+	} else {
+		instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", source2RegId, instr.operand))
+	}
+
+	// subtract
+	targetRegId := NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("add x%v, x%v, x%v", targetRegId, sourceRegId, source2RegId))
+
+	// store result
+	targetOffset := funcVarDict[instr.target]
+	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
+
+	ReleaseReg(sourceRegId)
+	ReleaseReg(source2RegId)
+	ReleaseReg(targetRegId)
+
+	return instruction
 }
