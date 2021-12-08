@@ -24,13 +24,13 @@ func (instr *Push) GetSources() []int {
 	return sources
 }
 
-func (instr *Push) GetImmediate() *int { return nil}
+func (instr *Push) GetImmediate() *int { return nil }
 
 func (instr *Push) GetSourceString() string { return "" }
 
 func (instr *Push) GetLabel() string { return "" }
 
-func (instr *Push) SetLabel(newLabel string){}
+func (instr *Push) SetLabel(newLabel string) {}
 
 func (instr *Push) String() string {
 	var out bytes.Buffer
@@ -43,7 +43,13 @@ func (instr *Push) String() string {
 		strSource = strSource + "r" + strconv.Itoa(src)
 	}
 
-	out.WriteString(fmt.Sprintf("    push {%s}",strSource))
+	out.WriteString(fmt.Sprintf("    push {%s}", strSource))
 
 	return out.String()
+}
+
+func (instr *Push) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+
+	return inst
 }

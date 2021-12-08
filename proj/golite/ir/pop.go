@@ -24,13 +24,13 @@ func (instr *Pop) GetSources() []int {
 	return sources
 }
 
-func (instr *Pop) GetImmediate() *int { return nil}
+func (instr *Pop) GetImmediate() *int { return nil }
 
 func (instr *Pop) GetSourceString() string { return "" }
 
 func (instr *Pop) GetLabel() string { return "" }
 
-func (instr *Pop) SetLabel(newLabel string){}
+func (instr *Pop) SetLabel(newLabel string) {}
 
 func (instr *Pop) String() string {
 	var out bytes.Buffer
@@ -43,7 +43,13 @@ func (instr *Pop) String() string {
 		strSource = strSource + "r" + strconv.Itoa(src)
 	}
 
-	out.WriteString(fmt.Sprintf("    pop {%s}",strSource))
+	out.WriteString(fmt.Sprintf("    pop {%s}", strSource))
 
 	return out.String()
+}
+
+func (instr *Pop) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+
+	return inst
 }

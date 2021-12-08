@@ -23,7 +23,7 @@ func (instr *Println) GetSources() []int {
 
 func (instr *Println) GetImmediate() *int { return nil }
 
-func (instr *Println) GetSourceString() string { return ""}
+func (instr *Println) GetSourceString() string { return "" }
 
 func (instr *Println) GetLabel() string { return "" }
 
@@ -31,8 +31,8 @@ func (instr *Println) SetLabel(newLabel string) {}
 
 func (instr *Println) String() string {
 	var out bytes.Buffer
-	sourceRegister := fmt.Sprintf("r%v",instr.sourceReg)
-	out.WriteString(fmt.Sprintf("    println %s",sourceRegister))
+	sourceRegister := fmt.Sprintf("r%v", instr.sourceReg)
+	out.WriteString(fmt.Sprintf("    println %s", sourceRegister))
 	return out.String()
 }
 
@@ -42,4 +42,10 @@ func PrintLnArmFormat() []string {
 	printInst = append(printInst, "\t.asciz\t\"%ld\\n\"")
 	printInst = append(printInst, "\t.size\t.PRINT_LN, 5")
 	return printInst
+}
+
+func (instr *Println) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+
+	return inst
 }

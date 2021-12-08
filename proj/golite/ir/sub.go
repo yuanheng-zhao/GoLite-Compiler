@@ -5,15 +5,15 @@ import (
 	"fmt"
 )
 
-type Sub struct{
-	target    int        // The target register for the instruction
-	sourceReg int        // The first source register of the instruction
-	operand   int        // The operand either register or constant
-	opty   OperandTy     // The type for the operand (REGISTER, IMMEDIATE)
+type Sub struct {
+	target    int       // The target register for the instruction
+	sourceReg int       // The first source register of the instruction
+	operand   int       // The operand either register or constant
+	opty      OperandTy // The type for the operand (REGISTER, IMMEDIATE)
 }
 
-func NewSub(target int,sourceReg int, operand int, opty OperandTy ) *Sub {
-	return &Sub{target,sourceReg,operand,opty}
+func NewSub(target int, sourceReg int, operand int, opty OperandTy) *Sub {
+	return &Sub{target, sourceReg, operand, opty}
 }
 
 func (instr *Sub) GetTargets() []int {
@@ -48,14 +48,14 @@ func (instr *Sub) GetLabel() string {
 	return ""
 }
 
-func (instr *Sub) SetLabel(newLabel string){}
+func (instr *Sub) SetLabel(newLabel string) {}
 
 func (instr *Sub) String() string {
 
 	var out bytes.Buffer
 
-	targetReg  := fmt.Sprintf("r%v",instr.target)
-	sourceReg  := fmt.Sprintf("r%v",instr.sourceReg)
+	targetReg := fmt.Sprintf("r%v", instr.target)
+	sourceReg := fmt.Sprintf("r%v", instr.sourceReg)
 
 	var prefix string
 
@@ -64,10 +64,16 @@ func (instr *Sub) String() string {
 	} else {
 		prefix = "r"
 	}
-	operand2   := fmt.Sprintf("%v%v",prefix, instr.operand)
+	operand2 := fmt.Sprintf("%v%v", prefix, instr.operand)
 
-	out.WriteString(fmt.Sprintf("    sub %s,%s,%s",targetReg,sourceReg,operand2))
+	out.WriteString(fmt.Sprintf("    sub %s,%s,%s", targetReg, sourceReg, operand2))
 
 	return out.String()
 
+}
+
+func (instr *Sub) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+
+	return inst
 }

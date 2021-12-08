@@ -5,15 +5,15 @@ import (
 	"fmt"
 )
 
-type Or struct{
-	target    int        // The target register for the instruction
-	sourceReg int        // The first source register of the instruction
-	operand   int        // The operand either register or constant
-	opty   OperandTy     // The type for the operand (REGISTER, IMMEDIATE)
+type Or struct {
+	target    int       // The target register for the instruction
+	sourceReg int       // The first source register of the instruction
+	operand   int       // The operand either register or constant
+	opty      OperandTy // The type for the operand (REGISTER, IMMEDIATE)
 }
 
-func NewOr(target int,sourceReg int, operand int, opty OperandTy ) *Or {
-	return &Or{target,sourceReg,operand,opty}
+func NewOr(target int, sourceReg int, operand int, opty OperandTy) *Or {
+	return &Or{target, sourceReg, operand, opty}
 }
 
 func (instr *Or) GetTargets() []int {
@@ -48,14 +48,14 @@ func (instr *Or) GetLabel() string {
 	return ""
 }
 
-func (instr *Or) SetLabel(newLabel string){}
+func (instr *Or) SetLabel(newLabel string) {}
 
 func (instr *Or) String() string {
 
 	var out bytes.Buffer
 
-	targetReg  := fmt.Sprintf("r%v",instr.target)
-	sourceReg  := fmt.Sprintf("r%v",instr.sourceReg)
+	targetReg := fmt.Sprintf("r%v", instr.target)
+	sourceReg := fmt.Sprintf("r%v", instr.sourceReg)
 
 	var prefix string
 
@@ -64,10 +64,16 @@ func (instr *Or) String() string {
 	} else {
 		prefix = "r"
 	}
-	operand2   := fmt.Sprintf("%v%v",prefix, instr.operand)
+	operand2 := fmt.Sprintf("%v%v", prefix, instr.operand)
 
-	out.WriteString(fmt.Sprintf("    or %s,%s,%s",targetReg,sourceReg,operand2))
+	out.WriteString(fmt.Sprintf("    or %s,%s,%s", targetReg, sourceReg, operand2))
 
 	return out.String()
 
+}
+
+func (instr *Or) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+
+	return inst
 }

@@ -23,7 +23,7 @@ func (instr *Read) GetSources() []int { return []int{} }
 
 func (instr *Read) GetImmediate() *int { return nil }
 
-func (instr *Read) GetSourceString() string { return ""}
+func (instr *Read) GetSourceString() string { return "" }
 
 func (instr *Read) GetLabel() string { return "" }
 
@@ -32,8 +32,8 @@ func (instr *Read) SetLabel(newLabel string) {}
 func (instr *Read) String() string {
 	var out bytes.Buffer
 
-	targetRegister := fmt.Sprintf("r%v",instr.targetReg)
-	out.WriteString(fmt.Sprintf("    read %s",targetRegister))
+	targetRegister := fmt.Sprintf("r%v", instr.targetReg)
+	out.WriteString(fmt.Sprintf("    read %s", targetRegister))
 	return out.String()
 }
 
@@ -43,4 +43,10 @@ func ReadArmFormat() []string {
 	readInsts = append(readInsts, "\t.asciz\t\"%ld\"")
 	readInsts = append(readInsts, "\t.size\t.READ, 4")
 	return readInsts
+}
+
+func (instr *Read) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+
+	return inst
 }

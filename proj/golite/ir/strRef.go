@@ -41,11 +41,17 @@ func (instr *StrRef) SetLabel(newLabel string) {}
 func (instr *StrRef) String() string {
 	var out bytes.Buffer
 
-	targetReg := fmt.Sprintf("r%v",instr.target)
-	sourceReg := fmt.Sprintf("r%v",instr.source)
-	strField := fmt.Sprintf("@%v",instr.field)
+	targetReg := fmt.Sprintf("r%v", instr.target)
+	sourceReg := fmt.Sprintf("r%v", instr.source)
+	strField := fmt.Sprintf("@%v", instr.field)
 
-	out.WriteString(fmt.Sprintf("    strRef %s,%s,%s",targetReg,sourceReg,strField))
+	out.WriteString(fmt.Sprintf("    strRef %s,%s,%s", targetReg, sourceReg, strField))
 
 	return out.String()
+}
+
+func (instr *StrRef) TranslateToAssembly(funcVarDict map[int]int) []string {
+	inst := []string{}
+
+	return inst
 }
