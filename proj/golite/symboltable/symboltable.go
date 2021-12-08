@@ -72,22 +72,31 @@ func (st *SymbolTable) CheckGlobalVariable(varName string) bool {
 	}
 }
 
-//func (st *SymbolTable) SetProtoName(name string) {
-//	st.ProtoName = name
-//}
-//
-//func (st *SymbolTable) GetProtoName() string {
-//	return st.ProtoName
-//}
+// GetCopy input st *SymbolTable as the prototype struct declared before main
+// return a deep-copied *SymbolTable to be attached with any instance of the prototype
+func (st *SymbolTable) GetCopy(scopeName string, parentSt *SymbolTable) *SymbolTable {
+	var entry Entry
+	instanceSt := New(parentSt, scopeName)
+	for key, e := range st.htable {
+		entry = *e
+		var duplicateEntry Entry
+		// TO-DO : here we assume no struct field exists in a struct; delete this line later
+		duplicateEntry = NewVarEntry()
 
-//func (st *SymbolTable) GetCopy(scopeName string, parentSt *SymbolTable) *SymbolTable {
-//	instanceSt := New(parentSt, scopeName)
-//	for key, entry := range st.htable {
-//		instanceSt.htable[key] = entry.
-//	}
-//	instanceSt.SetProtoName(st.ScopeName)
-//	return instanceSt
-//}
+		// Here we copy fields of depth only 1. That is, ignore struct containing struct as field
+		if entry.GetEntryType().GetName() == "int" { // var entry int
+			duplicateEntry = NewVarEntry()
+			duplicateEntry.SetType(types.IntTySig)
+		} else if entry.GetEntryType().GetName() == "bool" { // var entry bool
+			duplicateEntry = NewVarEntry()
+			duplicateEntry.SetType(types.BoolTySig)
+		} else if entry.GetEntryType().GetName() == "struct" { // struct entry
+			// TO-DO
+		} // else do nothing
+		instanceSt.htable[key] = &duplicateEntry
+	}
+	return instanceSt
+}
 
 type Entry interface {
 	SetType(t types.Type)

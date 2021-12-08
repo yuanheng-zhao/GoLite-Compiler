@@ -2,6 +2,6 @@ package main;
 import "fmt";
 func main () {
     a = new(undefinedTypeStruct);
-
+    fmt.Print(a);
     delete(a);
 }

@@ -1,0 +1,11 @@
+package main;
+import "fmt";
+type foo struct {
+    x int;
+};
+func main () {
+    var a *foo;
+    a = new(foo);
+    a.x = 123;
+    a.x = 0;
+}

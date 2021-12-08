@@ -76,6 +76,9 @@ func (p *Program) PerformSABuild(errors []string, symTable *st.SymbolTable) []st
 	newScopeSt := st.New(symTable, "new")
 	newScopeSt.ScopeParamNames = append(newScopeSt.ScopeParamNames, "structName")
 	newScopeSt.ScopeParamTys = append(newScopeSt.ScopeParamTys, types.StructTySig)
+	var structEntry st.Entry
+	structEntry = st.NewStructEntry(nil)
+	newScopeSt.Insert("structName", &structEntry)
 	var newEntry st.Entry
 	newEntry = st.NewFuncEntry(types.StructTySig, newScopeSt)
 	symTable.Insert("new", &newEntry)
@@ -84,6 +87,8 @@ func (p *Program) PerformSABuild(errors []string, symTable *st.SymbolTable) []st
 	deleteScopeSt := st.New(symTable, "delete")
 	deleteScopeSt.ScopeParamNames = append(deleteScopeSt.ScopeParamNames, "structName")
 	deleteScopeSt.ScopeParamTys = append(deleteScopeSt.ScopeParamTys, types.StructTySig)
+	structEntry = st.NewStructEntry(nil)
+	deleteScopeSt.Insert("structName", &structEntry)
 	var deleteEntry st.Entry
 	deleteEntry = st.NewFuncEntry(types.StructTySig, deleteScopeSt)
 	symTable.Insert("delete", &deleteEntry)
@@ -429,8 +434,31 @@ func (d *Declaration) String() string {
 	return out.String()
 }
 func (d *Declaration) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
+	//if d.Ty.GetType(symTable) == types.StructTySig {
+	//	// we want to construct scope table for it/them at this point
+	//	structName := d.Ty.TypeLiteral[1:]  // remove the * at position 0; e.g. *foo -> foo
+	//	//fmt.Println(structName)
+	//
+	//	// get the symbol table of the prototype of the struct
+	//	if protoStructEntry := symTable.PowerContains(structName); protoStructEntry != nil {
+	//		protoScopeSt := protoStructEntry.GetScopeST()
+	//		for _, id := range d.Ids.Idents {
+	//			duplicateScopeSt := protoScopeSt.GetCopy(id.String(), symTable)
+	//			var duplicateEntry st.Entry
+	//			duplicateEntry = st.NewStructEntry(duplicateScopeSt)
+	//			symTable.Insert(id.String(), &duplicateEntry)
+	//		}
+	//	} else {
+	//		errors = append(errors, fmt.Sprintf("[%v]: struct %v has not been defined", d.Token.LineNum, structName))
+	//	}
+	//} else {
+	//	// objective: none, duplicate definitions are examined in d.Ids.PerformSABuild()
+	//	errors = d.Ids.PerformSABuild(errors, symTable)
+	//}
+
 	// objective: none, duplicate definitions are examined in d.Ids.PerformSABuild()
 	errors = d.Ids.PerformSABuild(errors, symTable)
+
 	return errors
 }
 func (d *Declaration) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
@@ -439,6 +467,17 @@ func (d *Declaration) TypeCheck(errors []string, symTable *st.SymbolTable) []str
 	for _, id := range d.Ids.Idents {
 		entry := symTable.Contains(id.TokenLiteral())
 		entry.SetType(decType)
+		if entry.GetEntryType() == types.StructTySig {
+			structName := d.Ty.TypeLiteral[1:]
+			protoStructEntry := symTable.PowerContains(structName)
+			protoScopeSt := protoStructEntry.GetScopeST()
+			for _, id := range d.Ids.Idents {
+				duplicateScopeSt := protoScopeSt.GetCopy(id.String(), symTable)
+				var duplicateEntry st.Entry
+				duplicateEntry = st.NewStructEntry(duplicateScopeSt)
+				symTable.Insert(id.String(), &duplicateEntry)
+			}
+		}
 	}
 	return errors
 }
@@ -830,7 +869,7 @@ func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 				a.Token.LineNum, a.Expr.String(), rightType.GetName(), a.Lvalue.String(), leftType.GetName()))
 			return errors
 		}
-		if leftType != types.IntTySig && leftType != types.BoolTySig {
+		if leftType != types.IntTySig && leftType != types.BoolTySig && leftType != types.StructTySig {
 			errors = append(errors, fmt.Sprintf("[%v]: %v is not assignable", a.Token.LineNum, a.Lvalue.String()))
 			return errors
 		}
@@ -842,6 +881,17 @@ func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 			errors = append(errors, fmt.Sprintf("[%v]: %v is not assignable", a.Token.LineNum, a.Lvalue.String()))
 			return errors
 		}
+		// Ignore the following case here:
+		// new(foo) = new(foo2)
+		//if leftType == types.StructTySig {
+		//	// TO-DO :
+		//	structName := a.Expr.String()
+		//	fmt.Println(structName)
+		//	ent := a.Lvalue.getStructEntry(symTable)
+		//	fmt.Println(ent.GetScopeST())
+		//
+		//}
+
 		entry := a.Lvalue.getStructEntry(symTable)
 		if entry != nil {
 			entry.SetValue(a.Expr.TokenLiteral())
@@ -1464,36 +1514,6 @@ func (lv *LValue) String() string {
 	return out.String()
 }
 func (lv *LValue) GetType(symTable *st.SymbolTable) types.Type {
-	//var entry st.Entry
-	//varName := lv.Ident.TokenLiteral()
-	//for {
-	//	if entry = symTable.Contains(varName); entry == nil {
-	//		if symTable.Parent == nil {
-	//			return types.UnknownTySig
-	//		} else {
-	//			symTable = symTable.Parent
-	//		}
-	//	} else {
-	//		break
-	//	}
-	//}
-	//if lv.Idents == nil {
-	//	return entry.GetEntryType()
-	//}
-	//// here entry is the entry of the first id in Idents
-	//symTable = entry.GetScopeST()
-	//remaining := lv.Idents[1:]
-	//for idx, id := range remaining {
-	//	if entry = symTable.Contains(id.String()); entry == nil {
-	//		return types.UnknownTySig
-	//	} else {
-	//		if idx == len(lv.Idents)-1 {
-	//			break
-	//		}
-	//		symTable = entry.GetScopeST()
-	//	}
-	//}
-	//return entry.GetEntryType()
 	entry := lv.getStructEntry(symTable)
 	if entry != nil {
 		return entry.GetEntryType()
@@ -1525,8 +1545,10 @@ func (lv *LValue) getStructEntry(symTable *st.SymbolTable) st.Entry {
 		return entry
 	}
 	// here entry is the entry of the first id in Idents
-	symTable = entry.GetScopeST()
-	remaining := lv.Idents[1:]
+	symTable = entry.GetScopeST() // TO-DO : DEBUG the following
+	//remaining := lv.Idents[1:]
+	remaining := lv.Idents
+
 	for idx, id := range remaining {
 		if entry = symTable.Contains(id.String()); entry == nil {
 			return nil
@@ -2332,7 +2354,7 @@ func (ie *InvocExpr) String() string {
 	return out.String()
 }
 func (ie *InvocExpr) GetType(symTable *st.SymbolTable) types.Type {
-	if funcEntry := symTable.Contains(ie.Ident.Id); funcEntry != nil {
+	if funcEntry := symTable.PowerContains(ie.Ident.Id); funcEntry != nil {
 		return funcEntry.GetReturnTy()
 	}
 	return types.UnknownTySig
@@ -2340,7 +2362,7 @@ func (ie *InvocExpr) GetType(symTable *st.SymbolTable) types.Type {
 func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 	// refer from Invocation.TypeCheck
 	funcName := ie.Ident.TokenLiteral()
-	entry := symTable.Contains(funcName)
+	entry := symTable.PowerContains(funcName)
 	if entry == nil {
 		errors = append(errors, fmt.Sprintf("[%v]: function %v has not been defined", ie.Token.LineNum, funcName))
 	} else {
