@@ -57,7 +57,7 @@ func (instr *Branch) String() string {
 	}
 
 	operand := fmt.Sprintf("b%v", flag)
-	out.WriteString(fmt.Sprintf("%s %s",operand,instr.label))
+	out.WriteString(fmt.Sprintf("    %s %s",operand,instr.label))
 
 	return out.String()
 }

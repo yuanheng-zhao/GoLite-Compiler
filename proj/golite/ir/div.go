@@ -46,7 +46,7 @@ func (instr *Div) String() string {
 	sourceReg1 := fmt.Sprintf("r%v",instr.sourceReg1)
 	sourceReg2 := fmt.Sprintf("r%v",instr.sourceReg2)
 
-	out.WriteString(fmt.Sprintf("div %s,%s,%s",targetReg,sourceReg1,sourceReg2))
+	out.WriteString(fmt.Sprintf("    div %s,%s,%s",targetReg,sourceReg1,sourceReg2))
 
 	return out.String()
 

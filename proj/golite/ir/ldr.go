@@ -61,17 +61,17 @@ func (instr *Ldr) String() string {
 	if instr.opty == REGISTER {
 		sourceReg1 := fmt.Sprintf("r%v", instr.sourceReg)
 		sourceReg2 := fmt.Sprintf("r%v", instr.operand)
-		out.WriteString(fmt.Sprintf("ldr %s,%s,%s", targetReg, sourceReg1, sourceReg2))
+		out.WriteString(fmt.Sprintf("    ldr %s,%s,%s", targetReg, sourceReg1, sourceReg2))
 	} else if instr.opty == IMMEDIATE {
 		sourceReg := fmt.Sprintf("r%v", instr.sourceReg)
 		operand2 := fmt.Sprintf("#%v", instr.operand)
-		out.WriteString(fmt.Sprintf("ldr %s,%s,%s", targetReg, sourceReg, operand2))
+		out.WriteString(fmt.Sprintf("    ldr %s,%s,%s", targetReg, sourceReg, operand2))
 	} else if instr.opty == ONEOPERAND {
 		sourceReg := fmt.Sprintf("r%v", instr.sourceReg)
-		out.WriteString(fmt.Sprintf("ldr %s,%s", targetReg, sourceReg))
+		out.WriteString(fmt.Sprintf("    ldr %s,%s", targetReg, sourceReg))
 	} else if instr.opty == GLOBALVAR {
 		globVarName := fmt.Sprintf("@%v", instr.globalVar)
-		out.WriteString(fmt.Sprintf("ldr %s,%s", targetReg, globVarName))
+		out.WriteString(fmt.Sprintf("    ldr %s,%s", targetReg, globVarName))
 	}
 
 	return out.String()

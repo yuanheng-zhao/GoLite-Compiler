@@ -35,6 +35,6 @@ func (instr *New) SetLabel(newLabel string) {}
 func (instr *New) String() string {
 	var out bytes.Buffer
 	targetReg := fmt.Sprintf("r%v",instr.target)
-	out.WriteString(fmt.Sprintf("new %s,%s",targetReg,instr.dataType))
+	out.WriteString(fmt.Sprintf("    new %s,%s",targetReg,instr.dataType))
 	return out.String()
 }

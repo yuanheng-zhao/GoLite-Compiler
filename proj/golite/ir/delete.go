@@ -32,6 +32,6 @@ func (instr *Delete) SetLabel(newLabel string) {}
 func (instr *Delete) String() string {
 	var out bytes.Buffer
 	sourceRegister := fmt.Sprintf("r%v",instr.sourceReg)
-	out.WriteString(fmt.Sprintf("delete %s",sourceRegister))
+	out.WriteString(fmt.Sprintf("    delete %s",sourceRegister))
 	return out.String()
 }

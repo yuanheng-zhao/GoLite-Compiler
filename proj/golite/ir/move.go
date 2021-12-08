@@ -79,7 +79,7 @@ func (instr *Mov) String () string {
 		prefix = "r"
 	}
 	operand2 := fmt.Sprintf("%v%v",prefix,instr.operand)
-	out.WriteString(fmt.Sprintf("%s %s,%s",operator,targetReg,operand2))
+	out.WriteString(fmt.Sprintf("    %s %s,%s",operator,targetReg,operand2))
 
 	return out.String()
 }

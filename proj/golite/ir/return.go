@@ -61,7 +61,7 @@ func (instr *Ret) String() string {
 			sourceReg = fmt.Sprintf("r%v", instr.operand)
 		}
 
-		out.WriteString(fmt.Sprintf("ret %v", sourceReg))
+		out.WriteString(fmt.Sprintf("    ret %v", sourceReg))
 	}
 
 	return out.String()

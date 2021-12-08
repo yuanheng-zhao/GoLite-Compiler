@@ -58,7 +58,7 @@ func (instr *Cmp) String() string {
 
 	sourceOp2 := fmt.Sprintf("%v%v", prefix, instr.operand)
 
-	out.WriteString(fmt.Sprintf("cmp %s,%s", sourceReg,sourceOp2))
+	out.WriteString(fmt.Sprintf("    cmp %s,%s", sourceReg,sourceOp2))
 
 	return out.String()
 }

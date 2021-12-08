@@ -33,6 +33,6 @@ func (instr *Read) String() string {
 	var out bytes.Buffer
 
 	targetRegister := fmt.Sprintf("r%v",instr.targetReg)
-	out.WriteString(fmt.Sprintf("read %s",targetRegister))
+	out.WriteString(fmt.Sprintf("    read %s",targetRegister))
 	return out.String()
 }
