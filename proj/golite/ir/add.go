@@ -7,16 +7,16 @@ import (
 )
 
 // Add represents a ADD instruction in ILOC
-type Add struct{
-	target    int        // The target register for the instruction
-	sourceReg int        // The first source register of the instruction
-	operand   int        // The operand either register or constant
-	opty   OperandTy     // The type for the operand (REGISTER, IMMEDIATE)
+type Add struct {
+	target    int       // The target register for the instruction
+	sourceReg int       // The first source register of the instruction
+	operand   int       // The operand either register or constant
+	opty      OperandTy // The type for the operand (REGISTER, IMMEDIATE)
 }
 
 //NewAdd is a constructor and initialization function for a new Add instruction
-func NewAdd(target int,sourceReg int, operand int, opty OperandTy ) *Add {
-	return &Add{target,sourceReg,operand,opty}
+func NewAdd(target int, sourceReg int, operand int, opty OperandTy) *Add {
+	return &Add{target, sourceReg, operand, opty}
 }
 
 func (instr *Add) GetTargets() []int {
@@ -53,7 +53,7 @@ func (instr *Add) GetLabel() string {
 	// Add does not work with labels so we can just return a default value
 	return ""
 }
-func (instr *Add) SetLabel(newLabel string){
+func (instr *Add) SetLabel(newLabel string) {
 	// Add does not work with labels can we can skip implementing this method.
 }
 
@@ -61,8 +61,8 @@ func (instr *Add) String() string {
 
 	var out bytes.Buffer
 
-	targetReg  := fmt.Sprintf("r%v",instr.target)
-	sourceReg  := fmt.Sprintf("r%v",instr.sourceReg)
+	targetReg := fmt.Sprintf("r%v", instr.target)
+	sourceReg := fmt.Sprintf("r%v", instr.sourceReg)
 
 	var prefix string
 
@@ -71,9 +71,9 @@ func (instr *Add) String() string {
 	} else {
 		prefix = "r"
 	}
-	operand2   := fmt.Sprintf("%v%v",prefix, instr.operand)
+	operand2 := fmt.Sprintf("%v%v", prefix, instr.operand)
 
-	out.WriteString(fmt.Sprintf("    add %s,%s,%s",targetReg,sourceReg,operand2))
+	out.WriteString(fmt.Sprintf("    add %s,%s,%s", targetReg, sourceReg, operand2))
 
 	return out.String()
 
@@ -85,24 +85,24 @@ func (instr *Add) TranslateToAssembly(funcVarDict map[int]int) []string {
 	// load operand 1
 	sourceOffset := funcVarDict[instr.sourceReg]
 	sourceRegId := arm.NextAvailReg()
-	addInst = append(addInst, "ldr, x" + string(sourceRegId) + ", [x29, #" + string(sourceOffset))
+	addInst = append(addInst, "ldr x"+string(sourceRegId)+", [x29, #"+string(sourceOffset))
 
 	// load operand 2
 	source2RegId := arm.NextAvailReg()
 	if instr.opty == REGISTER {
 		source2Offset := funcVarDict[instr.sourceReg]
-		addInst = append(addInst, "ldr, x" + string(source2RegId) + ", [x29, #" + string(source2Offset))
+		addInst = append(addInst, "ldr x"+string(source2RegId)+", [x29, #"+string(source2Offset))
 	} else {
-		addInst = append(addInst, "mov, x" + string(source2RegId) + ", #" + string(instr.operand))
+		addInst = append(addInst, "mov x"+string(source2RegId)+", #"+string(instr.operand))
 	}
 
 	// add
 	targetRegId := arm.NextAvailReg()
-	addInst = append(addInst, "add x" + string(targetRegId) + ", x" + string(sourceRegId) + ", x" + string(source2RegId))
+	addInst = append(addInst, "add x"+string(targetRegId)+", x"+string(sourceRegId)+", x"+string(source2RegId))
 
 	// store result
 	targetOffset := funcVarDict[instr.target]
-	addInst = append(addInst, "str x" + string(targetRegId) + ", [x29, #" + string(targetOffset))
+	addInst = append(addInst, "str x"+string(targetRegId)+", [x29, #"+string(targetOffset))
 
 	return addInst
 }

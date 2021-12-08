@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/arm"
 )
 
 type Mov struct {
@@ -43,7 +44,7 @@ func (instr *Mov) GetLabel() string { return "" }
 
 func (instr *Mov) SetLabel(newLabel string) {}
 
-func (instr *Mov) String () string {
+func (instr *Mov) String() string {
 	var out bytes.Buffer
 	var flag string
 
@@ -70,21 +71,29 @@ func (instr *Mov) String () string {
 		flag = ""
 		break
 	}
-	operator := fmt.Sprintf("mov%v",flag)
-	targetReg  := fmt.Sprintf("r%v",instr.target)
+	operator := fmt.Sprintf("mov%v", flag)
+	targetReg := fmt.Sprintf("r%v", instr.target)
 	var prefix string
 	if instr.opty == IMMEDIATE {
 		prefix = "#"
 	} else {
 		prefix = "r"
 	}
-	operand2 := fmt.Sprintf("%v%v",prefix,instr.operand)
-	out.WriteString(fmt.Sprintf("    %s %s,%s",operator,targetReg,operand2))
+	operand2 := fmt.Sprintf("%v%v", prefix, instr.operand)
+	out.WriteString(fmt.Sprintf("    %s %s,%s", operator, targetReg, operand2))
 
 	return out.String()
 }
 
 func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int) []string {
-	inst := []string{}
-	return inst
+	instruction := []string{}
+	if instr.opty == IMMEDIATE {
+		instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", instr.target, instr.operand))
+	} else {
+		source2RegId := arm.NextAvailReg()
+		source2Offset := funcVarDict[instr.operand]
+		instruction = append(instruction, "ldr x"+string(source2RegId)+", [x29, #"+string(source2Offset))
+		instruction = append(instruction, fmt.Sprintf("mov x%v, x%v", instr.target, source2RegId))
+	}
+	return instruction
 }
