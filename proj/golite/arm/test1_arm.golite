@@ -7,5 +7,4 @@ func main () {
     a = 7;
     b = 3;
     c = a + b;
-    // fmt.Print(a);
 }

@@ -35,6 +35,8 @@ func Test1(t *testing.T) {
 	//		fmt.Println(instruction.String())
 	//	}
 	//}
-	resStr := TranslateToAssembly(globalFuncFrag, globalSymTable)
-	fmt.Println(resStr)
+	resStr := ir.TranslateToAssembly(globalFuncFrag)
+	for _, line := range resStr {
+		fmt.Println(line)
+	}
 }

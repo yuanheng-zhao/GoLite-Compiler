@@ -3,7 +3,6 @@ package ir
 import (
 	"bytes"
 	"fmt"
-	"proj/golite/arm"
 )
 
 type Mov struct {
@@ -87,13 +86,23 @@ func (instr *Mov) String() string {
 
 func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int) []string {
 	instruction := []string{}
+	var sourceRegId int
 	if instr.opty == IMMEDIATE {
 		instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", instr.target, instr.operand))
 	} else {
-		source2RegId := arm.NextAvailReg()
-		source2Offset := funcVarDict[instr.operand]
-		instruction = append(instruction, "ldr x"+string(source2RegId)+", [x29, #"+string(source2Offset))
-		instruction = append(instruction, fmt.Sprintf("mov x%v, x%v", instr.target, source2RegId))
+		sourceRegId = NextAvailReg()
+		sourceOffset := funcVarDict[instr.operand]
+		instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
+		instruction = append(instruction, fmt.Sprintf("mov x%v, x%v", instr.target, sourceRegId))
 	}
+
+	targetOffset := funcVarDict[instr.target]
+	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", instr.target, targetOffset))
+
+	ReleaseReg(instr.target)
+	if instr.opty == REGISTER {
+		ReleaseReg(sourceRegId)
+	}
+
 	return instruction
 }

@@ -3,7 +3,6 @@ package ir
 import (
 	"bytes"
 	"fmt"
-	"proj/golite/arm"
 )
 
 // Add represents a ADD instruction in ILOC
@@ -84,25 +83,34 @@ func (instr *Add) TranslateToAssembly(funcVarDict map[int]int) []string {
 
 	// load operand 1
 	sourceOffset := funcVarDict[instr.sourceReg]
-	sourceRegId := arm.NextAvailReg()
-	addInst = append(addInst, "ldr x"+string(sourceRegId)+", [x29, #"+string(sourceOffset))
+	sourceRegId := NextAvailReg()
+	//addInst = append(addInst, "ldr x"+string(sourceRegId)+", [x29, #"+string(sourceOffset))
+	addInst = append(addInst, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
 
 	// load operand 2
-	source2RegId := arm.NextAvailReg()
+	source2RegId := NextAvailReg()
 	if instr.opty == REGISTER {
 		source2Offset := funcVarDict[instr.sourceReg]
-		addInst = append(addInst, "ldr x"+string(source2RegId)+", [x29, #"+string(source2Offset))
+		//addInst = append(addInst, "ldr x"+string(source2RegId)+", [x29, #"+string(source2Offset))
+		addInst = append(addInst, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
 	} else {
-		addInst = append(addInst, "mov x"+string(source2RegId)+", #"+string(instr.operand))
+		//addInst = append(addInst, "mov x"+string(source2RegId)+", #"+string(instr.operand))
+		addInst = append(addInst, fmt.Sprintf("mov x%v, #%v", source2RegId, instr.operand))
 	}
 
 	// add
-	targetRegId := arm.NextAvailReg()
-	addInst = append(addInst, "add x"+string(targetRegId)+", x"+string(sourceRegId)+", x"+string(source2RegId))
+	targetRegId := NextAvailReg()
+	//addInst = append(addInst, "add x"+string(targetRegId)+", x"+string(sourceRegId)+", x"+string(source2RegId))
+	addInst = append(addInst, fmt.Sprintf("add x%v, x%v, x%v", targetRegId, sourceRegId, source2RegId))
 
 	// store result
 	targetOffset := funcVarDict[instr.target]
-	addInst = append(addInst, "str x"+string(targetRegId)+", [x29, #"+string(targetOffset))
+	//addInst = append(addInst, "str x"+string(targetRegId)+", [x29, #"+string(targetOffset))
+	addInst = append(addInst, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
+
+	ReleaseReg(sourceRegId)
+	ReleaseReg(source2RegId)
+	ReleaseReg(targetRegId)
 
 	return addInst
 }

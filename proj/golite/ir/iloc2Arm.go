@@ -1,13 +1,10 @@
-package arm
+package ir
 
-import (
-	"proj/golite/ir"
-	st "proj/golite/symboltable"
-)
+import "fmt"
 
 var regList map[int]bool
 
-func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []string {
+func TranslateToAssembly(funcfrags []*FuncFrag) []string {
 
 	armInstructions := []string{}
 	regList = make(map[int]bool)
@@ -28,8 +25,8 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 		//countVar := 0                     // count the variables inside this scope
 		offset := 0
 		funcVarDict := make(map[int]int) // variable name -> offset, e.g. a -> -8, b -> -16
-		for _, instruction := range funcfrag.Body{
-			if instruction.GetTargets() != nil {
+		for _, instruction := range funcfrag.Body {
+			if instruction.GetTargets() != nil && len(instruction.GetTargets()) > 0 {
 				offset -= 8
 				funcVarDict[instruction.GetTargets()[0]] = offset
 			}
@@ -43,11 +40,11 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 		//}
 
 		armInstructions = append(armInstructions, "\t.type "+funcfrag.Label+",%function")
-		armInstructions = append(armInstructions, "\t.global " + funcfrag.Label)
+		armInstructions = append(armInstructions, "\t.global "+funcfrag.Label)
 		armInstructions = append(armInstructions, "\t.p2align\t\t2")
 
 		funcSize := offset
-		if funcSize % 16 != 0 {
+		if funcSize%16 != 0 {
 			funcSize -= 8
 		}
 		armInstructions = append(armInstructions, prologue(-funcSize)...)
@@ -57,24 +54,25 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 		}
 
 		armInstructions = append(armInstructions, epilogue(-funcSize)...)
-		armInstructions = append(armInstructions, ".size " + funcfrag.Label + ", (. - " + funcfrag.Label + ")")
+		armInstructions = append(armInstructions, ".size "+funcfrag.Label+", (. - "+funcfrag.Label+")")
 	}
 
 	return armInstructions
 }
 
 func prologue(size int) []string {
+	fmt.Println("size inside prolo: ", size)
 	proInst := []string{}
 	proInst = append(proInst, "sub sp, sp, 16")
 	proInst = append(proInst, "stp x29, x30, [sp]")
 	proInst = append(proInst, "mov x29, sp")
-	proInst = append(proInst, "sub sp, sp, #" + string(size))
+	proInst = append(proInst, fmt.Sprintf("sub sp, sp, #%v", size))
 	return proInst
 }
 
 func epilogue(size int) []string {
 	epiInst := []string{}
-	epiInst = append(epiInst, "add sp, sp, #" + string(size))
+	epiInst = append(epiInst, fmt.Sprintf("add sp, sp, #%v", size))
 	epiInst = append(epiInst, "ldp x29, x30, [sp]")
 	epiInst = append(epiInst, "add sp, sp, 16")
 	epiInst = append(epiInst, "ret")
@@ -82,7 +80,7 @@ func epilogue(size int) []string {
 }
 
 func NextAvailReg() int {
-	for id, val:= range regList{
+	for id, val := range regList {
 		if val {
 			regList[id] = false
 			return id
