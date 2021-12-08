@@ -2387,7 +2387,16 @@ func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 	return errors
 }
 func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
-	// TO-DO : Refer from Invocation
+	if ie.Ident.String() == "new" {
+		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.String())
+		instructions = append(instructions, newInst)
+		return instructions
+	} else if ie.Ident.String() == "delete" {
+		entry := symTable.PowerContains(ie.InnerArgs.String())
+		delInst := ir.NewDelete(entry.GetRegId())
+		instructions = append(instructions, delInst)
+		return instructions
+	}
 	// push register values to stack, make space for parameter passing
 	arguments := ie.InnerArgs.Exprs
 	pushReg := []int{}
