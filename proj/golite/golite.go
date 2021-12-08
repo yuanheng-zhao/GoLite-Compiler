@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"proj/golite/arm"
 	ct "proj/golite/context"
 	"proj/golite/ir"
 	ps "proj/golite/parser"
@@ -19,12 +20,14 @@ func StartCompile(ctx ct.CompilerContext) {
 	//fmt.Println(ast)
 	globalSymtabl := sa.PerformSA(ast)
 	globalFuncFrag := ast.TranslateToILocFunc([]*ir.FuncFrag{}, globalSymtabl)
-	for _, funcFrag := range globalFuncFrag {
-		instructions := funcFrag.Body
-		for _, instruction := range instructions {
-			fmt.Println(instruction.String())
-		}
-	}
+	armInstructString := arm.TranslateToArm(globalFuncFrag, globalSymtabl)
+	fmt.Println(armInstructString)
+	//for _, funcFrag := range globalFuncFrag {
+	//	instructions := funcFrag.Body
+	//	for _, instruction := range instructions {
+	//		fmt.Println(instruction.String())
+	//	}
+	//}
 }
 
 func main() {
