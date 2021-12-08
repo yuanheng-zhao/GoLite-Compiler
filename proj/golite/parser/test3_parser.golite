@@ -15,6 +15,8 @@ var ian int;
 var jonathan, stellar bool;
 
 func main (para1 int, para2 int, para3 *orange) int {
+    // some comments
+    // some comments
     var macbook int;
     var ipad bool;
     var iphone *apple;
@@ -23,6 +25,7 @@ func main (para1 int, para2 int, para3 *orange) int {
     para3.c = macbook;
 
     if (ipad == true) {
+        // some comments
         fmt.Print(macbook);
     } else {
         fmt.Scan(&ian);
