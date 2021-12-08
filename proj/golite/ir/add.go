@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/arm"
 )
 
 // Add represents a ADD instruction in ILOC
@@ -76,4 +77,32 @@ func (instr *Add) String() string {
 
 	return out.String()
 
+}
+
+func (instr *Add) TranslateToAssembly(funcVarDict map[int]int) []string {
+	addInst := []string{}
+
+	// load operand 1
+	sourceOffset := funcVarDict[instr.sourceReg]
+	sourceRegId := arm.NextAvailReg()
+	addInst = append(addInst, "ldr, x" + string(sourceRegId) + ", [x29, #" + string(sourceOffset))
+
+	// load operand 2
+	source2RegId := arm.NextAvailReg()
+	if instr.opty == REGISTER {
+		source2Offset := funcVarDict[instr.sourceReg]
+		addInst = append(addInst, "ldr, x" + string(source2RegId) + ", [x29, #" + string(source2Offset))
+	} else {
+		addInst = append(addInst, "mov, x" + string(source2RegId) + ", #" + string(instr.operand))
+	}
+
+	// add
+	targetRegId := arm.NextAvailReg()
+	addInst = append(addInst, "add x" + string(targetRegId) + ", x" + string(sourceRegId) + ", x" + string(source2RegId))
+
+	// store result
+	targetOffset := funcVarDict[instr.target]
+	addInst = append(addInst, "str x" + string(targetRegId) + ", [x29, #" + string(targetOffset))
+
+	return addInst
 }

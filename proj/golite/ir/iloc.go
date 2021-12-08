@@ -1,7 +1,5 @@
 package ir
 
-import st "proj/golite/symboltable"
-
 type OperandTy int
 
 const (
@@ -39,7 +37,7 @@ type Instruction interface {
 
 	String() string // Return a string representation of this instruction
 
-	TranslateToAssembly(*st.SymbolTable) []string
+	TranslateToAssembly(map[int]int) []string
 }
 
 type FuncFrag struct {

@@ -36,3 +36,11 @@ func (instr *Read) String() string {
 	out.WriteString(fmt.Sprintf("    read %s",targetRegister))
 	return out.String()
 }
+
+func ReadArmFormat() []string {
+	readInsts := []string{}
+	readInsts = append(readInsts, ".READ")
+	readInsts = append(readInsts, "\t.asciz\t\"%ld\"")
+	readInsts = append(readInsts, "\t.size\t.READ, 4")
+	return readInsts
+}

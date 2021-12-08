@@ -35,3 +35,11 @@ func (instr *Println) String() string {
 	out.WriteString(fmt.Sprintf("    println %s",sourceRegister))
 	return out.String()
 }
+
+func PrintLnArmFormat() []string {
+	printInst := []string{}
+	printInst = append(printInst, ".PRINT_LN:")
+	printInst = append(printInst, "\t.asciz\t\"%ld\\n\"")
+	printInst = append(printInst, "\t.size\t.PRINT_LN, 5")
+	return printInst
+}

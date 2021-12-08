@@ -35,3 +35,11 @@ func (instr *Print) String() string {
 	out.WriteString(fmt.Sprintf("    print %s",sourceRegister))
 	return out.String()
 }
+
+func PrintArmFormat() []string {
+	printInst := []string{}
+	printInst = append(printInst, ".PRINT:")
+	printInst = append(printInst, "\t.asciz\t\"%ld\"")
+	printInst = append(printInst, "\t.size\t.PRINT, 4")
+	return printInst
+}
