@@ -20,6 +20,7 @@ const (
 	EQ
 	NE
 	AL
+	MARG
 )
 
 type Instruction interface {

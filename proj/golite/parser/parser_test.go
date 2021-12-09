@@ -134,3 +134,17 @@ func Test4(t *testing.T) {
 
 	fmt.Println(ast.String())
 }
+
+func Test5(t *testing.T) {
+	ctx := ct.New(false, false, false, "test5_parser.golite")
+	myScanner := scanner.New(*ctx)
+	//myScanner.Tokens()
+
+	parser := New(*myScanner)
+	ast := parser.Parse()
+	if ast == nil {
+		t.Errorf("\nParse(%v)\nExpected:%v\nGot:%v", "Ignore (Too long)", "Valid AST", nil)
+	}
+
+	fmt.Println(ast.String())
+}
