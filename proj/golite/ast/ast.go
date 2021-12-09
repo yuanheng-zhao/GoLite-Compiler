@@ -956,6 +956,7 @@ func (r *Read) String() string {
 	out.WriteString(r.Ident.String())
 	out.WriteString(")")
 	out.WriteString(";")
+	out.WriteString("\n")
 	return out.String()
 }
 func (r *Read) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
@@ -999,6 +1000,7 @@ func (p *Print) String() string {
 	out.WriteString(p.Ident.String())
 	out.WriteString(")")
 	out.WriteString(";")
+	out.WriteString("\n")
 	return out.String()
 }
 func (p *Print) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
@@ -1239,9 +1241,9 @@ func (invoc *Invocation) TokenLiteral() string {
 func (invoc *Invocation) String() string {
 	out := bytes.Buffer{}
 	out.WriteString(invoc.Ident.String())
-	out.WriteString(" ")
 	out.WriteString(invoc.Args.String())
 	out.WriteString(";")
+	out.WriteString("\n")
 	return out.String()
 }
 func (invoc *Invocation) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
@@ -1498,8 +1500,8 @@ func (args *Arguments) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 		errors = expr.TypeCheck(errors, symTable)
 		givenParamTy := expr.GetType(symTable)
 		if givenParamTy != expectedTys[idx] {
-			errors = append(errors, fmt.Sprintf("[%v]: Expected paramter %v type %v; given parameter %v type %v",
-				args.Token.LineNum, paramNames[idx], expectedTys[idx], expr.String(), givenParamTy))
+			errors = append(errors, fmt.Sprintf("[%v]: Expected parameter %v type %v; given parameter %v type %v",
+				args.Token.LineNum, paramNames[idx], expectedTys[idx].GetName(), expr.String(), givenParamTy.GetName()))
 		}
 	}
 	return errors
@@ -2247,7 +2249,8 @@ func (selt *SelectorTerm) GetType(symTable *st.SymbolTable) types.Type {
 		}
 		// here entry is the entry of the first id in Idents
 		symTable = entry.GetScopeST()
-		remaining := selt.Idents[1:]
+		//remaining := selt.Idents[1:]  // comment here for passing sa test of the Twiddleedee benchmark
+		remaining := selt.Idents
 		for idx, id := range remaining {
 			if entry = symTable.Contains(id.String()); entry == nil {
 				return types.UnknownTySig
@@ -2389,8 +2392,12 @@ func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 	if entry == nil {
 		errors = append(errors, fmt.Sprintf("[%v]: function %v has not been defined", ie.Token.LineNum, funcName))
 	} else {
-		symTable = entry.GetScopeST()
-		errors = ie.InnerArgs.TypeCheck(errors, symTable)
+		scopeSymTable := entry.GetScopeST()
+		if symTable.ScopeName == "main" { // special case : when calling a function in main,
+			// attach the symbol table of main as the parent of the symbol table of the function
+			scopeSymTable.Parent = symTable
+		}
+		errors = ie.InnerArgs.TypeCheck(errors, scopeSymTable)
 	}
 	return errors
 }
