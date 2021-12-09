@@ -78,6 +78,15 @@ func (instr *Ldr) String() string {
 }
 
 func (instr *Ldr) TranslateToAssembly(funcVarDict map[int]int) []string {
-	inst := []string{}
-	return inst
+	instruction := []string{}
+	if instr.opty == GLOBALVAR {
+		regId := NextAvailReg()
+		instruction = append(instruction, fmt.Sprintf("\tadrp x%v, %v", regId, instr.globalVar))
+		instruction = append(instruction, fmt.Sprintf("add x%v, x%v, :lo12:%v", regId, regId, instr.globalVar))
+		instruction = append(instruction, fmt.Sprintf("ldr x%v, [x%v]", regId, regId))
+		// TO-DO: how to get global variable offset
+		//regOffset := funcVarDict[]
+		//instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", regId, ))
+	}
+	return instruction
 }

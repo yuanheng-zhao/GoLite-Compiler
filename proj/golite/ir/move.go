@@ -86,6 +86,7 @@ func (instr *Mov) String() string {
 
 func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int) []string {
 	instruction := []string{}
+
 	targetRegId := NextAvailReg()
 	var sourceRegId int
 	if instr.opty == IMMEDIATE {

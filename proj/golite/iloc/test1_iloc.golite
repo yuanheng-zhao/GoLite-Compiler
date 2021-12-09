@@ -1,5 +1,6 @@
 package main;
 import "fmt";
+var b, c int;
 func main () {
     var a int;
     a = 1 + 1;

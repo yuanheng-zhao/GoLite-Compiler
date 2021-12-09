@@ -408,6 +408,7 @@ func (ds *Declarations) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *s
 		frag.Body = dec.TranslateToILoc(frag.Body, symTable)
 	}
 
+	funcFrag = append(funcFrag, &frag)
 	return funcFrag
 }
 
@@ -1288,7 +1289,7 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 
 	// move argument to dedicated registers
 	for i := 0; i < len(arguments); i++ {
-		movInstruct := ir.NewMov(i+1, arguments[i].targetReg, ir.AL, ir.REGISTER)
+		movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.MARG, ir.REGISTER)
 		instructions = append(instructions, movInstruct)
 	}
 
@@ -2416,7 +2417,7 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 
 	// move argument to dedicated registers
 	for i := 0; i < len(arguments); i++ {
-		movInstruct := ir.NewMov(i+1, arguments[i].targetReg, ir.AL, ir.REGISTER)
+		movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.MARG, ir.REGISTER)
 		instructions = append(instructions, movInstruct)
 	}
 
