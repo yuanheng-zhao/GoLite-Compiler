@@ -1,0 +1,25 @@
+package main;
+
+import "fmt";
+
+type Point2D struct {
+
+	x int;
+	y int;
+
+};
+
+var p1 *Point2D;
+
+func main() {
+
+    var temp int;
+    p1 = new(Point2D);
+    p1.x = 3;
+    p1.y = 4;
+    temp = p1.x;
+    fmt.Println(temp);
+    temp = p1.y;
+    fmt.Print(temp);
+    delete(p1);
+}
