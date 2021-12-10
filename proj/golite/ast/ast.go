@@ -1510,7 +1510,7 @@ func (args *Arguments) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 }
 func (args *Arguments) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	for _, exp := range args.Exprs {
-		exp.TranslateToILoc(instructions, symTable)
+		instructions = exp.TranslateToILoc(instructions, symTable)
 	}
 	return instructions
 }
@@ -1675,12 +1675,12 @@ func (exp *Expression) TypeCheck(errors []string, symTable *st.SymbolTable) []st
 }
 func (exp *Expression) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = exp.Left.TranslateToILoc(instructions, symTable)
+	leftSource := exp.Left.targetReg
 	if exp.Rights == nil || len(exp.Rights) == 0 {
-		exp.targetReg = exp.Left.targetReg
+		exp.targetReg = leftSource
 		return instructions
 	}
 
-	leftSource := exp.Left.targetReg
 	for _, rTerm := range exp.Rights {
 		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
@@ -2028,7 +2028,6 @@ func (st *SimpleTerm) TranslateToILoc(instructions []ir.Instruction, symTable *s
 
 	st.targetReg = leftSource
 	if st.Rights == nil || len(st.Rights) == 0 {
-		st.targetReg = st.Left.targetReg
 		return instructions
 	}
 
@@ -2118,12 +2117,12 @@ func (t *Term) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 }
 func (t *Term) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = t.Left.TranslateToILoc(instructions, symTable)
+	leftSource := t.Left.targetReg
 	if t.Rights == nil || len(t.Rights) == 0 {
-		t.targetReg = t.Left.targetReg
+		t.targetReg = leftSource
 		return instructions
 	}
 
-	leftSource := t.Left.targetReg
 	for idx, rTerm := range t.Rights {
 		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
@@ -2416,7 +2415,8 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	arguments := ie.InnerArgs.Exprs
 	pushReg := []int{}
 	for i := 0; i < len(arguments); i++ {
-		pushReg = append(pushReg, arguments[i].targetReg)
+		// retrieve reg id of the arguments from the symbol table
+		pushReg = append(pushReg, symTable.Contains(arguments[i].String()).GetRegId())
 		//pushReg = append(pushReg, i+1)
 	}
 	if len(pushReg) != 0 {
