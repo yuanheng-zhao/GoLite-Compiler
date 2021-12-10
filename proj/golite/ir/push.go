@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 	"strconv"
 )
 
@@ -50,7 +51,26 @@ func (instr *Push) String() string {
 }
 
 func (instr *Push) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
-	inst := []string{}
+	instruction := []string{}
 
-	return inst
+	offset := len(instr.sourceReg) * 8
+	if offset % 16 != 0 {
+		offset += 8
+	}
+	instruction = append(instruction, fmt.Sprintf("\tsub sp,sp,#%v",offset))
+
+	iteration := 8
+	if len(instr.sourceReg) <= 8 {
+		iteration = len(instr.sourceReg)
+	}
+
+	for i := 0; i < iteration; i++ {
+		aggRegId := utility.NextAvailReg()
+		argOffset := funcVarDict[instr.sourceReg[i]]
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",aggRegId,argOffset))
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,x%v",i,aggRegId))
+		utility.ReleaseReg(aggRegId)
+		utility.OccupyReg(i)
+	}
+	return instruction
 }

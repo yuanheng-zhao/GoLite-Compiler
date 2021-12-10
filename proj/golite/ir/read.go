@@ -42,7 +42,7 @@ func (instr *Read) String() string {
 
 func ReadArmFormat() []string {
 	readInsts := []string{}
-	readInsts = append(readInsts, ".READ")
+	readInsts = append(readInsts, ".READ:")
 	readInsts = append(readInsts, "\t.asciz\t\"%ld\"")
 	readInsts = append(readInsts, "\t.size\t.READ, 4")
 	return readInsts
