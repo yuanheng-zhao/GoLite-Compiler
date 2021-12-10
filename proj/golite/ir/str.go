@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type Str struct {
@@ -78,7 +79,24 @@ func (instr *Str) String() string {
 }
 
 func (instr *Str) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
-	inst := []string{}
+	instruction := []string{}
 
-	return inst
+	if instr.opty == GLOBALVAR {
+		addrRegId := utility.NextAvailReg()
+		sourceRegId := utility.NextAvailReg()
+		sourceOffset := funcVarDict[instr.target]
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",sourceRegId,sourceOffset))
+		instruction = append(instruction, fmt.Sprintf("\tadrp x%v,%v",addrRegId,instr.globalVar))
+		instruction = append(instruction, fmt.Sprintf("\tadd x%v,x%v, :lo12:%v",addrRegId,addrRegId,instr.globalVar))
+		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x%v]",sourceRegId,addrRegId))
+		utility.ReleaseReg(sourceRegId)
+		utility.ReleaseReg(addrRegId)
+	}
+
+	//ldr x2,[x29,#-16]
+	//adrp x1, p1
+	//add x1, x1, :lo12:p1
+	//str x2, [x1]
+
+	return instruction
 }

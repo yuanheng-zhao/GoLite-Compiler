@@ -3,7 +3,6 @@ package ir
 import (
 	"bytes"
 	"fmt"
-	"proj/golite/utility"
 )
 
 type New struct {
@@ -44,12 +43,11 @@ func (instr *New) String() string {
 func (instr *New) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
-	targetRegId := utility.NextAvailReg()
 	space := instr.size * 8
-	instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v",targetRegId, space))
+	instruction = append(instruction, fmt.Sprintf("\tmov x0,#%v", space))
 	instruction = append(instruction, "\tbl malloc")
 	targetOffset := funcVarDict[instr.target]
-	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",targetRegId,targetOffset))
+	instruction = append(instruction, fmt.Sprintf("\tstr x0,[x29,#%v]",targetOffset))
 
 	return instruction
 }
