@@ -1626,7 +1626,16 @@ func (lv *LValue) TranslateToILoc(instructions []ir.Instruction, symTable *st.Sy
 	for _, ident := range remainingBeforeLast {
 		instructions = ident.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
-		instruction := ir.NewLoadRef(target, source, ident.Id)
+		field := ident.Id
+		countFields := 0
+		for _, currField := range symTable.ScopeParamNames {
+			if field == currField {
+				break
+			}
+			countFields += 1
+		}
+		symTable = symTable.Contains(field).GetScopeST()
+		instruction := ir.NewLoadRef(target, source, ident.Id, countFields)
 		instructions = append(instructions, instruction)
 		source = target
 		lv.targetReg = target
@@ -2314,8 +2323,17 @@ func (selt *SelectorTerm) TranslateToILoc(instructions []ir.Instruction, symTabl
 	symTable = symTable.PowerContains(selt.Fact.String()).GetScopeST()
 	for _, ident := range selt.Idents {
 		instructions = ident.TranslateToILoc(instructions, symTable)
+
 		target := ir.NewRegister()
-		instruction := ir.NewLoadRef(target, source, ident.Id)
+		field := ident.Id
+		countFields := 0
+		for _, currField := range symTable.ScopeParamNames {
+			if field == currField {
+				break
+			}
+			countFields += 1
+		}
+		instruction := ir.NewLoadRef(target, source, field, countFields)
 		instructions = append(instructions, instruction)
 		source = target
 		selt.targetReg = target

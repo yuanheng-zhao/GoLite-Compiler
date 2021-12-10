@@ -8,13 +8,14 @@ import (
 
 // to access fields of a struct
 type LoadRef struct {
-	target int
-	source int
-	field  string
+	target   int
+	source   int
+	field    string
+	fieldIdx int
 }
 
-func NewLoadRef(target int, source int, field string) *LoadRef {
-	return &LoadRef{target, source, field}
+func NewLoadRef(target int, source int, field string, fieldIdx int) *LoadRef {
+	return &LoadRef{target, source, field, fieldIdx}
 }
 
 func (instr *LoadRef) GetTargets() []int {
@@ -42,11 +43,11 @@ func (instr *LoadRef) SetLabel(newLabel string) {}
 func (instr *LoadRef) String() string {
 	var out bytes.Buffer
 
-	targetReg := fmt.Sprintf("r%v",instr.target)
-	sourceReg := fmt.Sprintf("r%v",instr.source)
-	strField := fmt.Sprintf("@%v",instr.field)
+	targetReg := fmt.Sprintf("r%v", instr.target)
+	sourceReg := fmt.Sprintf("r%v", instr.source)
+	strField := fmt.Sprintf("@%v", instr.field)
 
-	out.WriteString(fmt.Sprintf("    loadRef %s,%s,%s",targetReg,sourceReg,strField))
+	out.WriteString(fmt.Sprintf("    loadRef %s,%s,%s", targetReg, sourceReg, strField))
 
 	return out.String()
 }
@@ -59,9 +60,9 @@ func (instr *LoadRef) TranslateToAssembly(funcVarDict map[int]int, paramRegIds m
 	structOffset := funcVarDict[instr.source]
 	targetOffset := funcVarDict[instr.target]
 
-	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",structRegId,structOffset))
-	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x%v,#%v",fieldRegId,))
-	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",fieldRegId,targetOffset))
+	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", structRegId, structOffset))
+	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x%v,#%v", fieldRegId))
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", fieldRegId, targetOffset))
 
 	return instruction
 }

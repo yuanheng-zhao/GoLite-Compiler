@@ -95,9 +95,9 @@ func (st *SymbolTable) GetCopy(scopeName string, parentSt *SymbolTable) *SymbolT
 		} // else do nothing
 		instanceSt.htable[key] = &duplicateEntry
 	}
-	//for _, fieldName := range st.ScopeParamNames {
-	//	instanceSt.ScopeParamNames = append(instanceSt.ScopeParamNames, fieldName)
-	//}
+	for _, fieldName := range st.ScopeParamNames {
+		instanceSt.ScopeParamNames = append(instanceSt.ScopeParamNames, fieldName)
+	}
 	return instanceSt
 }
 
