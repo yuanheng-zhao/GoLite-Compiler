@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type Print struct {
@@ -45,7 +46,27 @@ func PrintArmFormat() []string {
 }
 
 func (instr *Print) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
-	inst := []string{}
+	utility.SetPrint()
+	instruction := []string{}
 
-	return inst
+	var targetRegId int
+	var isTargetParam bool
+	if targetRegId, isTargetParam = paramRegIds[instr.sourceReg]; !isTargetParam {
+		targetRegId = utility.NextAvailReg()
+		targetOffset := funcVarDict[instr.sourceReg]
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",targetRegId,targetOffset))
+	}
+
+	sourceRegId := utility.NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("\tadrp x%v, .PRINT", sourceRegId))
+	instruction = append(instruction, fmt.Sprintf("\tadd x%v,x%v, :lo12:.PRINT",sourceRegId, sourceRegId))
+	instruction = append(instruction, fmt.Sprintf("\tmov x1,x%v",targetRegId))
+	instruction = append(instruction, fmt.Sprintf("\tmov x0,x%v",sourceRegId))
+	instruction = append(instruction, "\tbl printf")
+
+	if !isTargetParam {
+		utility.ReleaseReg(targetRegId)
+	}
+	utility.ReleaseReg(sourceRegId)
+	return instruction
 }
