@@ -8,10 +8,11 @@ import (
 
 type Pop struct {
 	sourceReg []int
+	funcName  string // "pop {r4, r5} @Add" in benchmarks/simple/simple1/simple1.iloc
 }
 
-func NewPop(sourceReg []int) *Pop {
-	return &Pop{sourceReg}
+func NewPop(sourceReg []int, funcName string) *Pop {
+	return &Pop{sourceReg, funcName}
 }
 
 func (instr *Pop) GetTargets() []int { return []int{} }
@@ -43,12 +44,12 @@ func (instr *Pop) String() string {
 		strSource = strSource + "r" + strconv.Itoa(src)
 	}
 
-	out.WriteString(fmt.Sprintf("    pop {%s}", strSource))
+	out.WriteString(fmt.Sprintf("    pop {%s} @%v", strSource, instr.funcName))
 
 	return out.String()
 }
 
-func (instr *Pop) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Pop) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	inst := []string{}
 
 	return inst

@@ -7,10 +7,11 @@ import (
 
 type Read struct {
 	targetReg int
+	variable  string // e.g. "read r5 @b" in benchmarks/simple/simple1/simple1.iloc
 }
 
-func NewRead(targetReg int) *Read {
-	return &Read{targetReg}
+func NewRead(targetReg int, varName string) *Read {
+	return &Read{targetReg, varName}
 }
 
 func (instr *Read) GetTargets() []int {
@@ -33,7 +34,7 @@ func (instr *Read) String() string {
 	var out bytes.Buffer
 
 	targetRegister := fmt.Sprintf("r%v", instr.targetReg)
-	out.WriteString(fmt.Sprintf("    read %s", targetRegister))
+	out.WriteString(fmt.Sprintf("    read %s @%v", targetRegister, instr.variable))
 	return out.String()
 }
 
@@ -45,7 +46,7 @@ func ReadArmFormat() []string {
 	return readInsts
 }
 
-func (instr *Read) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Read) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	inst := []string{}
 
 	return inst

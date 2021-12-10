@@ -8,10 +8,11 @@ import (
 
 type Push struct {
 	sourceReg []int
+	funcName  string // e.g. "push {r4, r5} @Add" in benchmarks/simple/simple1/simple1.iloc
 }
 
-func NewPush(sourceReg []int) *Push {
-	return &Push{sourceReg}
+func NewPush(sourceReg []int, funcName string) *Push {
+	return &Push{sourceReg, funcName}
 }
 
 func (instr *Push) GetTargets() []int { return []int{} }
@@ -43,12 +44,12 @@ func (instr *Push) String() string {
 		strSource = strSource + "r" + strconv.Itoa(src)
 	}
 
-	out.WriteString(fmt.Sprintf("    push {%s}", strSource))
+	out.WriteString(fmt.Sprintf("    push {%s} @%v", strSource, instr.funcName))
 
 	return out.String()
 }
 
-func (instr *Push) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Push) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	inst := []string{}
 
 	return inst

@@ -974,7 +974,7 @@ func (r *Read) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 }
 func (r *Read) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	entry := symTable.Contains(r.Ident.TokenLiteral())
-	instruction := ir.NewRead(entry.GetRegId())
+	instruction := ir.NewRead(entry.GetRegId(), r.Ident.String())
 	instructions = append(instructions, instruction)
 	return instructions
 }
@@ -1283,7 +1283,7 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 		pushReg = append(pushReg, i+1)
 	}
 	if len(pushReg) != 0 {
-		pushInstruct := ir.NewPush(pushReg)
+		pushInstruct := ir.NewPush(pushReg, invoc.Ident.String())
 		instructions = append(instructions, pushInstruct)
 		// reversed for future pop
 		for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
@@ -1303,7 +1303,7 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 
 	// after returning from the function
 	// pop from stack to restore the previously pushed values
-	popInstruct := ir.NewPop(pushReg)
+	popInstruct := ir.NewPop(pushReg, invoc.Ident.String())
 	instructions = append(instructions, popInstruct)
 	return instructions
 
@@ -2406,6 +2406,8 @@ func (ie *InvocExpr) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 	return errors
 }
 func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
+	ie.targetReg = ir.NewRegister()
+
 	if ie.Ident.String() == "new" {
 		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.Exprs[0].TokenLiteral())
 		instructions = append(instructions, newInst)
@@ -2420,7 +2422,7 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 		//pushReg = append(pushReg, i+1)
 	}
 	if len(pushReg) != 0 {
-		pushInstruct := ir.NewPush(pushReg)
+		pushInstruct := ir.NewPush(pushReg, ie.Ident.String())
 		instructions = append(instructions, pushInstruct)
 		// reversed for future pop
 		//for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
@@ -2438,9 +2440,15 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	branchInstruct := ir.NewBl(ie.Ident.TokenLiteral())
 	instructions = append(instructions, branchInstruct)
 
+	// move the return value from the function to the target
+	// by default the return value stored in r0
+	movRetInstruct := ir.NewMov(ie.targetReg, 0, ir.AL, ir.REGISTER)
+	movRetInstruct.SetRetFlag()
+	instructions = append(instructions, movRetInstruct)
+
 	// after returning from the function
 	// pop from stack to restore the previously pushed values
-	popInstruct := ir.NewPop(pushReg)
+	popInstruct := ir.NewPop(pushReg, ie.Ident.String())
 	instructions = append(instructions, popInstruct)
 	return instructions
 }

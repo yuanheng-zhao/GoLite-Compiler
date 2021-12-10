@@ -10,10 +10,11 @@ type Mov struct {
 	target  int
 	operand int
 	opty    OperandTy
+	retFlag bool
 }
 
 func NewMov(target int, operand int, flag ApsrFlag, opty OperandTy) *Mov {
-	return &Mov{flag, target, operand, opty}
+	return &Mov{flag, target, operand, opty, false}
 }
 
 func (instr *Mov) GetTargets() []int {
@@ -81,30 +82,38 @@ func (instr *Mov) String() string {
 	operand2 := fmt.Sprintf("%v%v", prefix, instr.operand)
 	out.WriteString(fmt.Sprintf("    %s %s,%s", operator, targetReg, operand2))
 
+	if instr.retFlag {
+		out.WriteString(fmt.Sprintf(" @Return"))
+	}
+
 	return out.String()
 }
 
-func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
-	targetRegId := NextAvailReg()
-	var sourceRegId int
-	if instr.opty == IMMEDIATE {
-		instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", targetRegId, instr.operand))
-	} else {
-		sourceRegId = NextAvailReg()
-		sourceOffset := funcVarDict[instr.operand]
-		instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
-		instruction = append(instruction, fmt.Sprintf("mov x%v, x%v", targetRegId, sourceRegId))
-	}
-
-	targetOffset := funcVarDict[instr.target]
-	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
-
-	ReleaseReg(targetRegId)
-	if instr.opty == REGISTER {
-		ReleaseReg(sourceRegId)
-	}
+	//targetRegId := NextAvailReg()
+	//var sourceRegId int
+	//if instr.opty == IMMEDIATE {
+	//	instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", targetRegId, instr.operand))
+	//} else {
+	//	sourceRegId = NextAvailReg()
+	//	sourceOffset := funcVarDict[instr.operand]
+	//	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
+	//	instruction = append(instruction, fmt.Sprintf("mov x%v, x%v", targetRegId, sourceRegId))
+	//}
+	//
+	//targetOffset := funcVarDict[instr.target]
+	//instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
+	//
+	//ReleaseReg(targetRegId)
+	//if instr.opty == REGISTER {
+	//	ReleaseReg(sourceRegId)
+	//}
 
 	return instruction
+}
+
+func (instr *Mov) SetRetFlag() {
+	instr.retFlag = true
 }
