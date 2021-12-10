@@ -64,5 +64,8 @@ func (instr *Read) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[
 	instruction = append(instruction, fmt.Sprintf("\tmov x0,x%v", sourceReg))
 	instruction = append(instruction, "\tbl scanf")
 
+	utility.ReleaseReg(varTargetRegId)
+	utility.ReleaseReg(sourceReg)
+	
 	return instruction
 }
