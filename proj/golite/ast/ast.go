@@ -660,33 +660,33 @@ func (f *Function) TranslateToILocFunc(funcFrag []*ir.FuncFrag, symTable *st.Sym
 	funcLabelInstruct := ir.NewLabelStmt(frag.Label)
 	frag.Body = append(frag.Body, funcLabelInstruct)
 	// push values in registers associated with the registers to stack
-	pushReg := []int{}
-	params := symTable.ScopeParamNames
-	for _, param := range params {
-		entry := symTable.Contains(param)
-		pushReg = append(pushReg, entry.GetRegId())
-	}
-	if len(pushReg) != 0 {
-		pushInst := ir.NewPush(pushReg)
-		frag.Body = append(frag.Body, pushInst)
-		// reversed for future pop
-		for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
-			pushReg[i], pushReg[j] = pushReg[j], pushReg[i]
-		}
-	}
+	//pushReg := []int{}
+	//params := symTable.ScopeParamNames
+	//for _, param := range params {
+	//	entry := symTable.Contains(param)
+	//	pushReg = append(pushReg, entry.GetRegId())
+	//}
+	//if len(pushReg) != 0 {
+	//	pushInst := ir.NewPush(pushReg)
+	//	frag.Body = append(frag.Body, pushInst)
+	//	// reversed for future pop
+	//	for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
+	//		pushReg[i], pushReg[j] = pushReg[j], pushReg[i]
+	//	}
+	//}
 	// move values from dedicated registers to parameters
-	for i := 1; i <= len(params); i++ {
-		entry := symTable.Contains(params[i-1])
-		movInst := ir.NewMov(entry.GetRegId(), i, ir.AL, ir.REGISTER)
-		frag.Body = append(frag.Body, movInst)
-	}
+	//for i := 1; i <= len(params); i++ {
+	//	entry := symTable.Contains(params[i-1])
+	//	movInst := ir.NewMov(entry.GetRegId(), i, ir.AL, ir.REGISTER)
+	//	frag.Body = append(frag.Body, movInst)
+	//}
 	// translate function statements
 	frag.Body = f.Statements.TranslateToILoc(frag.Body, symTable)
 	// pop the previously pushed values in registers associated with parameters
-	if len(pushReg) != 0 {
-		popInst := ir.NewPop(pushReg)
-		frag.Body = append(frag.Body, popInst)
-	}
+	//if len(pushReg) != 0 {
+	//	popInst := ir.NewPop(pushReg)
+	//	frag.Body = append(frag.Body, popInst)
+	//}
 
 	funcFrag = append(funcFrag, &frag)
 	return funcFrag
@@ -2411,22 +2411,23 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	arguments := ie.InnerArgs.Exprs
 	pushReg := []int{}
 	for i := 0; i < len(arguments); i++ {
-		pushReg = append(pushReg, i+1)
+		pushReg = append(pushReg, arguments[i].targetReg)
+		//pushReg = append(pushReg, i+1)
 	}
 	if len(pushReg) != 0 {
 		pushInstruct := ir.NewPush(pushReg)
 		instructions = append(instructions, pushInstruct)
 		// reversed for future pop
-		for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
-			pushReg[i], pushReg[j] = pushReg[j], pushReg[i]
-		}
+		//for i, j := 0, len(pushReg)-1; i < j; i, j = i+1, j-1 {
+		//	pushReg[i], pushReg[j] = pushReg[j], pushReg[i]
+		//}
 	}
 
 	// move argument to dedicated registers
-	for i := 0; i < len(arguments); i++ {
-		movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.MARG, ir.REGISTER)
-		instructions = append(instructions, movInstruct)
-	}
+	//for i := 0; i < len(arguments); i++ {
+	//	movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.MARG, ir.REGISTER)
+	//	instructions = append(instructions, movInstruct)
+	//}
 
 	// branch to function
 	branchInstruct := ir.NewBl(ie.Ident.TokenLiteral())
