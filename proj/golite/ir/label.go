@@ -36,6 +36,9 @@ func (instr *Label) String() string {
 }
 
 func (instr *Label) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
-	inst := []string{}
-	return inst
+	instruction := []string{}
+
+	instruction = append(instruction, fmt.Sprintf("%v:",instr.label))
+
+	return instruction
 }
