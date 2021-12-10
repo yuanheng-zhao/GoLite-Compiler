@@ -1081,7 +1081,9 @@ func (cond *Conditional) String() string {
 func (cond *Conditional) PerformSABuild(errors []string, symTable *st.SymbolTable) []string {
 	// objective: none
 	errors = cond.Block.PerformSABuild(errors, symTable)
-	errors = cond.ElseBlock.PerformSABuild(errors, symTable)
+	if cond.ElseBlock != nil {
+		errors = cond.ElseBlock.PerformSABuild(errors, symTable)
+	}
 	return errors
 }
 func (cond *Conditional) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
@@ -1089,7 +1091,9 @@ func (cond *Conditional) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	condType := cond.Expr.GetType(symTable)
 	errors = cond.Expr.TypeCheck(errors, symTable)
 	errors = cond.Block.TypeCheck(errors, symTable)
-	errors = cond.ElseBlock.TypeCheck(errors, symTable)
+	if cond.ElseBlock != nil {
+		errors = cond.ElseBlock.TypeCheck(errors, symTable)
+	}
 	if len(errors) == 0 {
 		if condType != types.BoolTySig {
 			errors = append(errors, fmt.Sprintf("[%v]: boolean expression is desired, received %v Type %v", cond.Token.LineNum, cond.Expr.String(), condType.GetName()))
