@@ -93,12 +93,21 @@ func (instr *Mov) String() string {
 func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
+	if instr.retFlag {
+		tempRegId := utility.NextAvailReg()
+		tempOffset := funcVarDict[instr.target]
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,x0",tempRegId))
+		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",tempRegId,tempOffset))
+		utility.ReleaseReg(tempRegId)
+		return instruction
+	}
 	var sourceRegId, targetRegId int
 	var isSourceParam, isTargetParam bool
 
 	if targetRegId, isTargetParam = paramRegIds[instr.target]; !isTargetParam {
 		targetRegId = utility.NextAvailReg()
 	}
+
 
 	if instr.opty == REGISTER {
 		if sourceRegId, isSourceParam = paramRegIds[instr.operand]; !isSourceParam {
