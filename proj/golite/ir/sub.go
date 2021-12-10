@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type Sub struct {
@@ -74,32 +75,44 @@ func (instr *Sub) String() string {
 
 func (instr *Sub) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
+	var source1RegId int
+	var source2RegId int
+	var isParam1 bool
+	var isParam2 bool
 
-	//// load operand 1
-	//sourceOffset := funcVarDict[instr.sourceReg]
-	//sourceRegId := NextAvailReg()
-	//instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
-	//
-	//// load operand 2
-	//source2RegId := NextAvailReg()
-	//if instr.opty == REGISTER {
-	//	source2Offset := funcVarDict[instr.operand]
-	//	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
-	//} else {
-	//	instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", source2RegId, instr.operand))
-	//}
-	//
-	//// subtract
-	//targetRegId := NextAvailReg()
-	//instruction = append(instruction, fmt.Sprintf("add x%v, x%v, x%v", targetRegId, sourceRegId, source2RegId))
-	//
-	//// store result
-	//targetOffset := funcVarDict[instr.target]
-	//instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
-	//
-	//ReleaseReg(sourceRegId)
-	//ReleaseReg(source2RegId)
-	//ReleaseReg(targetRegId)
+	// load operand 1
+	if source1RegId, isParam1 = paramRegIds[instr.sourceReg]; !isParam1 {
+		source1Offset := funcVarDict[instr.sourceReg]
+		source1RegId = utility.NextAvailReg()
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", source1RegId, source1Offset))
+	}
+
+	// load operand 2
+	if source2RegId, isParam2 = paramRegIds[instr.operand]; !isParam2 {
+		source2RegId = utility.NextAvailReg()
+		if instr.opty == REGISTER {
+			source2Offset := funcVarDict[instr.operand]
+			instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", source2RegId, source2Offset))
+		} else {
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v", source2RegId, instr.operand))
+		}
+	}
+
+	// sub
+	targetRegId := utility.NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("\tsub x%v,x%v,x%v", targetRegId, source1RegId, source2RegId))
+
+	// store result
+	targetOffset := funcVarDict[instr.target]
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", targetRegId, targetOffset))
+
+	utility.ReleaseReg(targetRegId)
+	if !isParam1 {
+		utility.ReleaseReg(source1RegId)
+	}
+	if !isParam2 {
+		utility.ReleaseReg(source2RegId)
+	}
 
 	return instruction
 }
