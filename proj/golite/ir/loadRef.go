@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 // to access fields of a struct
@@ -51,6 +52,16 @@ func (instr *LoadRef) String() string {
 }
 
 func (instr *LoadRef) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
-	inst := []string{}
-	return inst
+	instruction := []string{}
+
+	fieldRegId := utility.NextAvailReg()
+	structRegId := utility.NextAvailReg()
+	structOffset := funcVarDict[instr.source]
+	targetOffset := funcVarDict[instr.target]
+
+	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",structRegId,structOffset))
+	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x%v,#%v",fieldRegId,))
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",fieldRegId,targetOffset))
+
+	return instruction
 }

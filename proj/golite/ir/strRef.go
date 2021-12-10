@@ -64,13 +64,8 @@ func (instr *StrRef) TranslateToAssembly(funcVarDict map[int]int, paramRegIds ma
 	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",sourceRegId,sourceOffSet))
 
 	fieldOffset := instr.fieldIdx * 8
-	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x%v,#]",sourceRegId,fieldOffset))
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x%v,#%v]",targetRegId,sourceRegId,fieldOffset))
 	utility.ReleaseReg(targetRegId)
 	utility.ReleaseReg(sourceRegId)
 	return instruction
-
-	//ILOC:     strRef r15,r14,@x
-	//ldr x1,[x29,#-32]
-	//ldr x2,[x29,#-24]
-	//str x2, [x1,#0]
 }
