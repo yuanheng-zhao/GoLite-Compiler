@@ -1273,7 +1273,13 @@ func (invoc *Invocation) TypeCheck(errors []string, symTable *st.SymbolTable) []
 }
 func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	if invoc.Ident.TokenLiteral() == "delete" {
-		entry := symTable.PowerContains(invoc.Args.Exprs[0].TokenLiteral())
+		instanceName := invoc.Args.Exprs[0].TokenLiteral()
+		entry := symTable.PowerContains(instanceName)
+		if symTable.CheckGlobalVariable(instanceName) {
+			// load the address of the global struct instance
+			ldrGlobalInst := ir.NewLdr(entry.GetRegId(), -1, -1, instanceName, ir.GLOBALVAR)
+			instructions = append(instructions, ldrGlobalInst)
+		}
 		delInst := ir.NewDelete(entry.GetRegId())
 		instructions = append(instructions, delInst)
 		return instructions
@@ -1593,10 +1599,10 @@ func (lv *LValue) getStructEntry(symTable *st.SymbolTable) st.Entry {
 func (lv *LValue) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = lv.Ident.TranslateToILoc(instructions, symTable)
 
-	if symTable.CheckGlobalVariable(lv.Ident.String()) { // ldr global variable
-		ldrInst := ir.NewLdr(lv.Ident.targetReg, -1, -1, lv.Ident.Id, ir.GLOBALVAR)
-		instructions = append(instructions, ldrInst)
-	}
+	//if symTable.CheckGlobalVariable(lv.Ident.String()) { // ldr global variable
+	//	ldrInst := ir.NewLdr(lv.Ident.targetReg, -1, -1, lv.Ident.Id, ir.GLOBALVAR)
+	//	instructions = append(instructions, ldrInst)
+	//}
 
 	lv.targetReg = lv.Ident.targetReg
 	if lv.Idents == nil || len(lv.Idents) == 0 {
@@ -2429,7 +2435,14 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	pushReg := []int{}
 	for i := 0; i < len(arguments); i++ {
 		// retrieve reg id of the arguments from the symbol table
-		pushReg = append(pushReg, symTable.Contains(arguments[i].String()).GetRegId())
+		// Two Cases : primitive value or variable
+		if entry := symTable.Contains(arguments[i].String()); entry != nil {
+			// passed in a variable
+			pushReg = append(pushReg, entry.GetRegId())
+		} else { // passed in a primitive type (int/bool)
+			instructions = arguments[i].TranslateToILoc(instructions, symTable)
+			pushReg = append(pushReg, arguments[i].targetReg)
+		}
 		//pushReg = append(pushReg, i+1)
 	}
 	if len(pushReg) != 0 {
@@ -2608,19 +2621,19 @@ func (idl *IdentLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []
 }
 func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 
-	//if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
-	//	idl.targetReg = ir.NewRegister()
-	//	instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
-	//	instructions = append(instructions, instruction)
-	//} else {
-	//	// use Powercontain or contains here?
-	//	sourceReg := symTable.PowerContains(idl.Id).GetRegId()
-	//	idl.targetReg = sourceReg
-	//}
+	if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
+		idl.targetReg = ir.NewRegister()
+		instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
+		instructions = append(instructions, instruction)
+	} else {
+		// use Powercontain or contains here?
+		sourceReg := symTable.PowerContains(idl.Id).GetRegId()
+		idl.targetReg = sourceReg
+	}
 
-	// use Powercontain or contains here?
-	sourceReg := symTable.PowerContains(idl.Id).GetRegId()
-	idl.targetReg = sourceReg
+	//// use Powercontain or contains here?
+	//sourceReg := symTable.PowerContains(idl.Id).GetRegId()
+	//idl.targetReg = sourceReg
 
 	return instructions
 }
