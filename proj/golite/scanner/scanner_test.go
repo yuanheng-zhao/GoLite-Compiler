@@ -57,7 +57,7 @@ func VerifyTestFull(t *testing.T, tests []ExpectedResultFull, scanner *Scanner) 
 }
 
 func Test1(t *testing.T) {
-	ctx := ct.New(false, false, false, "test1.golite")
+	ctx := ct.New(false, false, false, false, "test1.golite")
 	scanner := New(*ctx)
 
 	expected := []ExpectedResult{
@@ -100,7 +100,7 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	ctx := ct.New(false, false, false, "test2.golite")
+	ctx := ct.New(false, false, false, false, "test2.golite")
 	scanner := New(*ctx)
 
 	expected := []ExpectedResult{
@@ -143,7 +143,7 @@ func Test2(t *testing.T) {
 }
 
 func Test3(t *testing.T) {
-	ctx := ct.New(false, false, false, "test3.golite")
+	ctx := ct.New(false, false, false, false, "test3.golite")
 	scanner := New(*ctx)
 
 	expected := []ExpectedResult{
@@ -183,7 +183,7 @@ func Test3(t *testing.T) {
 }
 
 func Test4(t *testing.T) {
-	ctx := ct.New(false, false, false, "test4.golite")
+	ctx := ct.New(false, false, false, false, "test4.golite")
 	scanner := New(*ctx)
 
 	expected := []ExpectedResult{

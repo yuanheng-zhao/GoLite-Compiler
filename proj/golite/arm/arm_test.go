@@ -11,7 +11,7 @@ import (
 )
 
 func Test1(t *testing.T) {
-	ctx := ct.New(false, false, false, "test1_arm.golite")
+	ctx := ct.New(false, false, false, false, "test1_arm.golite")
 	myScanner := scanner.New(*ctx)
 	myParser := parser.New(*myScanner)
 	ast := myParser.Parse()
@@ -41,7 +41,7 @@ func Test1(t *testing.T) {
 }
 
 func Test6(t *testing.T) {
-	ctx := ct.New(false, false, false, "test6_arm.golite")
+	ctx := ct.New(false, false, false, false, "test6_arm.golite")
 	myScanner := scanner.New(*ctx)
 	myParser := parser.New(*myScanner)
 	ast := myParser.Parse()
@@ -71,7 +71,7 @@ func Test6(t *testing.T) {
 }
 
 func Test7(t *testing.T) {
-	ctx := ct.New(false, false, false, "test7_arm.golite")
+	ctx := ct.New(false, false, false, false, "test7_arm.golite")
 	myScanner := scanner.New(*ctx)
 	myParser := parser.New(*myScanner)
 	ast := myParser.Parse()
@@ -101,7 +101,7 @@ func Test7(t *testing.T) {
 }
 
 func Test8(t *testing.T) {
-	ctx := ct.New(false, false, false, "test8_arm.golite")
+	ctx := ct.New(false, false, false, false, "test8_arm.golite")
 	myScanner := scanner.New(*ctx)
 	myParser := parser.New(*myScanner)
 	ast := myParser.Parse()
@@ -131,7 +131,7 @@ func Test8(t *testing.T) {
 }
 
 func Test9(t *testing.T) {
-	ctx := ct.New(false, false, false, "test9_arm.golite")
+	ctx := ct.New(false, false, false, false, "test9_arm.golite")
 	myScanner := scanner.New(*ctx)
 	myParser := parser.New(*myScanner)
 	ast := myParser.Parse()
@@ -161,7 +161,7 @@ func Test9(t *testing.T) {
 }
 
 func Test10(t *testing.T) {
-	ctx := ct.New(false, false, false, "test10_arm.golite")
+	ctx := ct.New(false, false, false, false, "test10_arm.golite")
 	myScanner := scanner.New(*ctx)
 	myParser := parser.New(*myScanner)
 	ast := myParser.Parse()
