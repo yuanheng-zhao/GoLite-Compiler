@@ -1316,12 +1316,6 @@ func (invoc *Invocation) TranslateToILoc(instructions []ir.Instruction, symTable
 		}
 	}
 
-	// move argument to dedicated registers
-	for i := 0; i < len(arguments); i++ {
-		movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.MARG, ir.REGISTER)
-		instructions = append(instructions, movInstruct)
-	}
-
 	// branch to function
 	branchInstruct := ir.NewBl(invoc.Ident.TokenLiteral())
 	instructions = append(instructions, branchInstruct)
@@ -2495,12 +2489,6 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 		//	pushReg[i], pushReg[j] = pushReg[j], pushReg[i]
 		//}
 	}
-
-	// move argument to dedicated registers
-	//for i := 0; i < len(arguments); i++ {
-	//	movInstruct := ir.NewMov(i, arguments[i].targetReg, ir.MARG, ir.REGISTER)
-	//	instructions = append(instructions, movInstruct)
-	//}
 
 	// branch to function
 	branchInstruct := ir.NewBl(ie.Ident.TokenLiteral())
