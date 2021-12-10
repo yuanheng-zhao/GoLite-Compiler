@@ -43,11 +43,25 @@ func (instr *New) String() string {
 func (instr *New) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
+	// prepare for malloc, push x0... to stack
+	offset := 16
+	for i := 0; i < len(paramRegIds); i++ {
+		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,%v]",i,offset))
+		offset += 8
+	}
+
 	space := instr.size * 8
 	instruction = append(instruction, fmt.Sprintf("\tmov x0,#%v", space))
 	instruction = append(instruction, "\tbl malloc")
 	targetOffset := funcVarDict[instr.target]
 	instruction = append(instruction, fmt.Sprintf("\tstr x0,[x29,#%v]",targetOffset))
+
+	// restore registers after malloc
+	offset = 16
+	for i := 0; i < len(paramRegIds); i++ {
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,%v]",i,offset))
+		offset += 8
+	}
 
 	return instruction
 }

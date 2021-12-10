@@ -55,9 +55,13 @@ func (instr *StrRef) String() string {
 func (instr *StrRef) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
-	targetRegId := utility.NextAvailReg()
-	targetOffSet := funcVarDict[instr.target]
-	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",targetRegId,targetOffSet))
+	var targetRegId int
+	var istargetParam bool
+	if targetRegId, istargetParam = paramRegIds[instr.target]; !istargetParam {
+		targetRegId = utility.NextAvailReg()
+		targetOffSet := funcVarDict[instr.target]
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", targetRegId, targetOffSet))
+	}
 
 	sourceRegId := utility.NextAvailReg()
 	sourceOffSet := funcVarDict[instr.source]
@@ -65,7 +69,10 @@ func (instr *StrRef) TranslateToAssembly(funcVarDict map[int]int, paramRegIds ma
 
 	fieldOffset := instr.fieldIdx * 8
 	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x%v,#%v]",targetRegId,sourceRegId,fieldOffset))
-	utility.ReleaseReg(targetRegId)
+
+	if !istargetParam {
+		utility.ReleaseReg(targetRegId)
+	}
 	utility.ReleaseReg(sourceRegId)
 	return instruction
 }
