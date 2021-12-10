@@ -55,14 +55,18 @@ func (instr *LoadRef) String() string {
 func (instr *LoadRef) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
-	fieldRegId := utility.NextAvailReg()
+	loadToRegId := utility.NextAvailReg()
+	loadToOffset := funcVarDict[instr.target]
 	structRegId := utility.NextAvailReg()
 	structOffset := funcVarDict[instr.source]
-	targetOffset := funcVarDict[instr.target]
+	fieldOffset := instr.fieldIdx * 8
 
 	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", structRegId, structOffset))
-	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x%v,#%v", fieldRegId))
-	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", fieldRegId, targetOffset))
+	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x%v,#%v]", loadToRegId, structRegId, fieldOffset))
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", loadToRegId, loadToOffset))
+
+	utility.ReleaseReg(loadToRegId)
+	utility.ReleaseReg(structRegId)
 
 	return instruction
 }
