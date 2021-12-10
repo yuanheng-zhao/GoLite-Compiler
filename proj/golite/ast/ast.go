@@ -2426,7 +2426,9 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	if ie.Ident.String() == "new" {
 		instructions = instructions[:len(instructions)-1] // remove the ldr in lvalue
 
-		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.Exprs[0].TokenLiteral())
+		// TO-DO: examine the correctness of getting the size of struct
+
+		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.Exprs[0].TokenLiteral(), 2)
 		instructions = append(instructions, newInst)
 		return instructions
 	}

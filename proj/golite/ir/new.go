@@ -3,15 +3,17 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type New struct {
 	target   int
 	dataType string
+	size     int
 }
 
-func NewNew(target int, dataType string) *New {
-	return &New{target, dataType}
+func NewNew(target int, dataType string, size int) *New {
+	return &New{target, dataType, size}
 }
 
 func (instr *New) GetTargets() []int {
@@ -40,6 +42,14 @@ func (instr *New) String() string {
 }
 
 func (instr *New) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
-	inst := []string{}
-	return inst
+	instruction := []string{}
+
+	targetRegId := utility.NextAvailReg()
+	space := instr.size * 8
+	instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v",targetRegId, space))
+	instruction = append(instruction, "\tbl malloc")
+	targetOffset := funcVarDict[instr.target]
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",targetRegId,targetOffset))
+
+	return instruction
 }
