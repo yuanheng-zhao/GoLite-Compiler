@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type Mov struct {
@@ -91,6 +92,39 @@ func (instr *Mov) String() string {
 
 func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
+
+	var sourceRegId, targetRegId int
+	var isSourceParam, isTargetParam bool
+
+	if targetRegId, isTargetParam = paramRegIds[instr.target]; !isTargetParam {
+		targetRegId = utility.NextAvailReg()
+	}
+
+	if instr.opty == REGISTER {
+		if sourceRegId, isSourceParam = paramRegIds[instr.operand]; !isSourceParam {
+			sourceOffset := funcVarDict[instr.operand]
+			sourceRegId = utility.NextAvailReg()
+			instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", sourceRegId, sourceOffset))
+		}
+	}
+
+	if instr.opty == REGISTER {
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,x%v",targetRegId,sourceRegId))
+	} else {
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v",targetRegId,instr.operand))
+	}
+
+	if !isTargetParam {
+		targetOffset := funcVarDict[instr.target]
+		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", targetRegId,targetOffset))
+	}
+
+	if instr.opty == REGISTER && !isSourceParam {
+		utility.ReleaseReg(sourceRegId)
+	}
+	if !isTargetParam {
+		utility.ReleaseReg(targetRegId)
+	}
 
 	//targetRegId := NextAvailReg()
 	//var sourceRegId int
