@@ -1,0 +1,73 @@
+package main;
+
+import "fmt";
+
+type MESSAGE struct  {
+   val int;
+   next *MESSAGE;
+};
+
+//func delete(value interface{}){ }
+
+func mod(val int, mod int) int {
+
+   var temp int;
+   temp = val / mod;
+   return val - temp * mod;
+}
+
+func power(x int, n int) int {
+   var temp int;
+   if(n == 0) {
+      return 1;
+   } else {
+      if(mod(n, 2) == 1) {
+         return x * power(x, n-1);
+      } else {
+         temp = power(x, n/2);
+         return temp * temp;
+      }
+   }
+}
+
+func crypt( m int,  key int , msg *MESSAGE) {
+   msg.val = mod(power(msg.val, key), m);
+   if (msg.next != nil) {
+      crypt(m, key, msg.next);
+   }
+   return;
+}
+func main() {
+   var key, mod, length, readTemp, printTemp int;
+   var start, current, temp *MESSAGE;
+   start = new(MESSAGE);
+   current = start;
+
+   fmt.Scan(&key);
+   fmt.Scan(&mod);
+   fmt.Scan(&length);
+
+
+   length = length - 1;
+   fmt.Scan(&readTemp);
+   current.val = readTemp;
+
+   for (length > 0) {
+      current.next = new(MESSAGE);
+      current = current.next;
+      fmt.Scan(&readTemp);
+      current.val = readTemp;
+      length = length - 1;
+   }
+   current.next = nil;
+
+   crypt(mod, key, start);
+   current = start;
+   for (current != nil) {
+      temp = current;
+      printTemp = current.val;
+      fmt.Println(printTemp);
+      current = current.next;
+      delete(temp);
+   }
+}
