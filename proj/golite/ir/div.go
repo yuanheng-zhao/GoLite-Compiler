@@ -75,7 +75,7 @@ func (instr *Div) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[i
 
 	// divide
 	targetRegId := utility.NextAvailReg()
-	instruction = append(instruction, fmt.Sprintf("\tdiv x%v,x%v,x%v",targetRegId,source1RedId,source2RedId))
+	instruction = append(instruction, fmt.Sprintf("\tsdiv x%v,x%v,x%v",targetRegId,source1RedId,source2RedId))
 
 	// store result
 	targetOffset := funcVarDict[instr.target]

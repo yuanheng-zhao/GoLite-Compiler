@@ -157,6 +157,26 @@ func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[i
 		instruction = append(instruction, fmt.Sprintf("%v:",label))
 
 		utility.ReleaseReg(cmpResReg)
+	} else if instr.flag == LE {
+		label := NewLabelWithPre("skipMov")
+		instruction = append(instruction, fmt.Sprintf("\tb.gt %v", label))
+		cmpResReg := utility.NextAvailReg()
+		cmpResOffset := funcVarDict[instr.target]
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1",cmpResReg))
+		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v",cmpResReg,cmpResOffset))
+
+		instruction = append(instruction, fmt.Sprintf("%v:",label))
+		utility.ReleaseReg(cmpResReg)
+	} else if instr.flag == EQ {
+		label := NewLabelWithPre("skipMov")
+		instruction = append(instruction, fmt.Sprintf("\tb.ne %v", label))
+		cmpResReg := utility.NextAvailReg()
+		cmpResOffset := funcVarDict[instr.target]
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1",cmpResReg))
+		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v",cmpResReg,cmpResOffset))
+
+		instruction = append(instruction, fmt.Sprintf("%v:",label))
+		utility.ReleaseReg(cmpResReg)
 	}
 
 	return instruction
