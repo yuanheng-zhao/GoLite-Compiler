@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type Mul struct{
@@ -55,27 +56,39 @@ func (instr *Mul) String() string {
 func (instr *Mul) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
-	//// load operand 1
-	//source1Offset := funcVarDict[instr.sourceReg1]
-	//source1RegId := NextAvailReg()
-	//instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source1RegId, source1Offset))
-	//
-	//// load operand 2
-	//source2RegId := NextAvailReg()
-	//source2Offset := funcVarDict[instr.sourceReg2]
-	//instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
-	//
-	//// multiply
-	//targetRegId := NextAvailReg()
-	//instruction = append(instruction, fmt.Sprintf("mul x%v, x%v, x%v", targetRegId, source1RegId, source2RegId))
-	//
-	//// store result
-	//targetOffset := funcVarDict[instr.target]
-	//instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
-	//
-	//ReleaseReg(source1RegId)
-	//ReleaseReg(source2RegId)
-	//ReleaseReg(targetRegId)
+	var source1RedId, source2RedId int
+	var isParam1, isParam2 bool
+
+	// load operand 1
+	if source1RedId, isParam1 = paramRegIds[instr.sourceReg1]; !isParam1 {
+		source1Offset := funcVarDict[instr.sourceReg1]
+		source1RedId = utility.NextAvailReg()
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",source1RedId,source1Offset))
+	}
+
+	// load operand 2
+	if source2RedId, isParam2 = paramRegIds[instr.sourceReg2]; !isParam2 {
+		source2Offset := funcVarDict[instr.sourceReg2]
+		source2RedId = utility.NextAvailReg()
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",source2RedId,source2Offset))
+	}
+
+	// multiply
+	targetRegId := utility.NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("\tmul x%v,x%v,x%v",targetRegId,source1RedId,source2RedId))
+
+	// store result
+	targetOffset := funcVarDict[instr.target]
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",targetRegId,targetOffset))
+
+
+	if !isParam1 {
+		utility.ReleaseReg(source1RedId)
+	}
+	if !isParam2 {
+		utility.ReleaseReg(source2RedId)
+	}
+	utility.ReleaseReg(targetRegId)
 
 	return instruction
 }
