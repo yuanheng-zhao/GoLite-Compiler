@@ -13,7 +13,8 @@ import (
 func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []string {
 
 	armInstructions := []string{}
-	utility.Init()
+	utility.RegInit()
+	utility.IOInit()
 
 	// program title
 	armInstructions = append(armInstructions, "\t.arch armv8-a")
@@ -85,6 +86,16 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 		if funcfrag.Label == "main" {
 			utility.ReleaseReg(0)
 		}
+	}
+
+	if utility.GetPrint() {
+		armInstructions = append(armInstructions, ir.PrintArmFormat()...)
+	}
+	if utility.GetPrintln() {
+		armInstructions = append(armInstructions, ir.PrintLnArmFormat()...)
+	}
+	if utility.GetScan() {
+		armInstructions = append(armInstructions, ir.ReadArmFormat()...)
 	}
 
 	return armInstructions

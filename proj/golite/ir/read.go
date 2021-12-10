@@ -49,11 +49,20 @@ func ReadArmFormat() []string {
 }
 
 func (instr *Read) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
+	utility.SetScan()
 	instruction := []string{}
 
+	varTargetRegId := utility.NextAvailReg()
+	varTargetOffset := funcVarDict[instr.varReg]
+	instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",varTargetRegId, varTargetOffset))
+
 	sourceReg := utility.NextAvailReg()
-	instruction = append(instruction, fmt.Sprintf("\tadrp x%v,.READ",sourceReg))
+	instruction = append(instruction, fmt.Sprintf("\tadrp x%v, .READ",sourceReg))
 	instruction = append(instruction, fmt.Sprintf("\tadd x%v,x%v,:lo12:.READ",sourceReg,sourceReg))
+
+	instruction = append(instruction, fmt.Sprintf("\tadd x%v,x29,#%v",varTargetRegId,varTargetOffset))
+	instruction = append(instruction, fmt.Sprintf("\tmov x0,x%v", sourceReg))
+	instruction = append(instruction, "\tbl scanf")
 
 	return instruction
 }

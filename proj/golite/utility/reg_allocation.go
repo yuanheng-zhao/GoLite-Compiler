@@ -2,7 +2,7 @@ package utility
 
 var regList map[int]bool
 
-func Init() {
+func RegInit() {
 	regList = make(map[int]bool)
 	for i := 0; i < 32; i++ {
 		regList[i] = true
