@@ -1216,9 +1216,11 @@ func (ret *Return) TypeCheck(errors []string, symTable *st.SymbolTable) []string
 }
 func (ret *Return) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	var retInst ir.Instruction
+
 	if ret.Expr == nil {
 		retInst = ir.NewRet(-1, ir.VOID)
 	} else {
+		instructions = ret.Expr.TranslateToILoc(instructions, symTable)
 		retInst = ir.NewRet(ret.Expr.targetReg, ir.REGISTER)
 	}
 	instructions = append(instructions, retInst)
@@ -2022,12 +2024,14 @@ func (st *SimpleTerm) TypeCheck(errors []string, symTable *st.SymbolTable) []str
 }
 func (st *SimpleTerm) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = st.Left.TranslateToILoc(instructions, symTable)
+	leftSource := st.Left.targetReg
+
+	st.targetReg = leftSource
 	if st.Rights == nil || len(st.Rights) == 0 {
 		st.targetReg = st.Left.targetReg
 		return instructions
 	}
 
-	leftSource := st.Left.targetReg
 	for idx, rTerm := range st.Rights {
 		instructions = rTerm.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
@@ -2037,6 +2041,7 @@ func (st *SimpleTerm) TranslateToILoc(instructions []ir.Instruction, symTable *s
 		} else { // "-"
 			instruction = ir.NewSub(target, leftSource, rTerm.targetReg, ir.REGISTER)
 		}
+		st.targetReg = target
 		instructions = append(instructions, instruction)
 		leftSource = target
 	}
