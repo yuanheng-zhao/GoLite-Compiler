@@ -2426,9 +2426,14 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	if ie.Ident.String() == "new" {
 		instructions = instructions[:len(instructions)-1] // remove the ldr in lvalue
 
-		// TO-DO: examine the correctness of getting the size of struct
-
-		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.Exprs[0].TokenLiteral(), 2)
+		// examine the size of the struct
+		structName := ie.InnerArgs.Exprs[0].String() // must be a single arg in new
+		structSt := symTable.PowerContains(structName).GetScopeST()
+		countFields := 0
+		for _, _ = range structSt.ScopeParamNames {
+			countFields += 1
+		}
+		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.Exprs[0].TokenLiteral(), countFields)
 		instructions = append(instructions, newInst)
 		return instructions
 	}
