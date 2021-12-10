@@ -99,3 +99,93 @@ func Test7(t *testing.T) {
 		fmt.Println(line)
 	}
 }
+
+func Test8(t *testing.T) {
+	ctx := ct.New(false, false, false, "test8_arm.golite")
+	myScanner := scanner.New(*ctx)
+	myParser := parser.New(*myScanner)
+	ast := myParser.Parse()
+	//fmt.Println("AST Printout:")
+	//fmt.Println(ast.String())
+
+	globalSymTable := sa.PerformSA(ast)
+	//mainEnt := globalSymTable.Contains("main")
+	if globalSymTable == nil {
+		t.Errorf("\nExpected: returned symbol table; Got nil\n")
+	}
+
+	globalFuncFrag := ast.TranslateToILocFunc([]*ir.FuncFrag{}, globalSymTable)
+	if globalFuncFrag == nil {
+		t.Errorf("\nExpected: returned FuncFrag; Got nil\n")
+	}
+	//for _, funcFrag := range globalFuncFrag {
+	//	instructions := funcFrag.Body
+	//	for _, instruction := range instructions {
+	//		fmt.Println(instruction.String())
+	//	}
+	//}
+	resStr := TranslateToAssembly(globalFuncFrag, globalSymTable)
+	for _, line := range resStr {
+		fmt.Println(line)
+	}
+}
+
+func Test9(t *testing.T) {
+	ctx := ct.New(false, false, false, "test9_arm.golite")
+	myScanner := scanner.New(*ctx)
+	myParser := parser.New(*myScanner)
+	ast := myParser.Parse()
+	//fmt.Println("AST Printout:")
+	//fmt.Println(ast.String())
+
+	globalSymTable := sa.PerformSA(ast)
+	//mainEnt := globalSymTable.Contains("main")
+	if globalSymTable == nil {
+		t.Errorf("\nExpected: returned symbol table; Got nil\n")
+	}
+
+	globalFuncFrag := ast.TranslateToILocFunc([]*ir.FuncFrag{}, globalSymTable)
+	if globalFuncFrag == nil {
+		t.Errorf("\nExpected: returned FuncFrag; Got nil\n")
+	}
+	//for _, funcFrag := range globalFuncFrag {
+	//	instructions := funcFrag.Body
+	//	for _, instruction := range instructions {
+	//		fmt.Println(instruction.String())
+	//	}
+	//}
+	resStr := TranslateToAssembly(globalFuncFrag, globalSymTable)
+	for _, line := range resStr {
+		fmt.Println(line)
+	}
+}
+
+func Test10(t *testing.T) {
+	ctx := ct.New(false, false, false, "test10_arm.golite")
+	myScanner := scanner.New(*ctx)
+	myParser := parser.New(*myScanner)
+	ast := myParser.Parse()
+	//fmt.Println("AST Printout:")
+	//fmt.Println(ast.String())
+
+	globalSymTable := sa.PerformSA(ast)
+	//mainEnt := globalSymTable.Contains("main")
+	if globalSymTable == nil {
+		t.Errorf("\nExpected: returned symbol table; Got nil\n")
+	}
+
+	globalFuncFrag := ast.TranslateToILocFunc([]*ir.FuncFrag{}, globalSymTable)
+	if globalFuncFrag == nil {
+		t.Errorf("\nExpected: returned FuncFrag; Got nil\n")
+	}
+	//for _, funcFrag := range globalFuncFrag {
+	//	instructions := funcFrag.Body
+	//	for _, instruction := range instructions {
+	//		fmt.Println(instruction.String())
+	//	}
+	//}
+	resStr := TranslateToAssembly(globalFuncFrag, globalSymTable)
+	for _, line := range resStr {
+		fmt.Println(line)
+	}
+}
