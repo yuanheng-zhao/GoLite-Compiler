@@ -93,10 +93,5 @@ func (instr *Str) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[i
 		utility.ReleaseReg(addrRegId)
 	}
 
-	//ldr x2,[x29,#-16]
-	//adrp x1, p1
-	//add x1, x1, :lo12:p1
-	//str x2, [x1]
-
 	return instruction
 }
