@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type Ret struct {
@@ -69,7 +70,25 @@ func (instr *Ret) String() string {
 }
 
 func (instr *Ret) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
-	inst := []string{}
+	instruction := []string{}
 
-	return inst
+	var retRegId int
+	var isParam bool
+
+	if instr.opty == REGISTER {
+		if retRegId, isParam = paramRegIds[instr.operand]; !isParam {
+			operandOffset := funcVarDict[instr.operand]
+			retRegId = utility.NextAvailReg()
+			instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]",retRegId,operandOffset))
+		}
+		instruction = append(instruction, fmt.Sprintf("\tmov x0,x%v",retRegId))
+	} else if instr.opty == IMMEDIATE {
+		instruction = append(instruction, fmt.Sprintf("\tmov x0,%v",instr.operand))
+	}
+
+	if !isParam {
+		utility.ReleaseReg(retRegId)
+	}
+
+	return instruction
 }
