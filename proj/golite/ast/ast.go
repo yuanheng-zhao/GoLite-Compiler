@@ -912,6 +912,11 @@ func (a *Assignment) TypeCheck(errors []string, symTable *st.SymbolTable) []stri
 
 func (a *Assignment) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = a.Lvalue.TranslateToILoc(instructions, symTable)
+	exprStr := a.Expr.String()
+	if symTable.CheckGlobalVariable(a.Lvalue.String()) && len(exprStr) > 5 && exprStr[:3] == "new" {
+		instructions = instructions[:len(instructions)-1] // remove ldr global variable
+	}
+
 	instructions = a.Expr.TranslateToILoc(instructions, symTable)
 	var instruction ir.Instruction
 	exprReg := a.Expr.GetTargetReg()
@@ -2454,7 +2459,7 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	ie.targetReg = ir.NewRegister()
 
 	if ie.Ident.String() == "new" {
-		instructions = instructions[:len(instructions)-1] // remove the ldr in lvalue
+		//instructions = instructions[:len(instructions)-1] // remove the ldr in lvalue
 
 		// examine the size of the struct
 		structName := ie.InnerArgs.Exprs[0].String() // must be a single arg in new
