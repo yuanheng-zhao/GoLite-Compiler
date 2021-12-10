@@ -3,15 +3,17 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type Read struct {
 	targetReg int
 	variable  string // e.g. "read r5 @b" in benchmarks/simple/simple1/simple1.iloc
+	varReg    int
 }
 
-func NewRead(targetReg int, varName string) *Read {
-	return &Read{targetReg, varName}
+func NewRead(targetReg int, varName string, varReg int) *Read {
+	return &Read{targetReg, varName, varReg}
 }
 
 func (instr *Read) GetTargets() []int {
@@ -47,7 +49,11 @@ func ReadArmFormat() []string {
 }
 
 func (instr *Read) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
-	inst := []string{}
+	instruction := []string{}
 
-	return inst
+	sourceReg := utility.NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("\tadrp x%v,.READ",sourceReg))
+	instruction = append(instruction, fmt.Sprintf("\tadd x%v,x%v,:lo12:.READ",sourceReg,sourceReg))
+
+	return instruction
 }
