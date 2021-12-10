@@ -5,20 +5,22 @@ import (
 )
 
 type CompilerContext struct {
-	lexOut     bool   // Determines whether the scanner prints it's output
-	astOut     bool   // Determines whether the parser prints it's output (ast)
-	iLocOut    bool   // Determines whether to print out ILOC representation
+	lexOut     bool // Determines whether the scanner prints it's output
+	astOut     bool // Determines whether the parser prints it's output (ast)
+	iLocOut    bool // Determines whether to print out ILOC representation
+	armOut     bool
 	sourcePath string // The path of the input source file for a golite program
 }
 
-func New(lexOut bool, astOut bool, iLocOut bool, sourcePath string) *CompilerContext {
-	return &CompilerContext{lexOut, astOut, iLocOut, sourcePath}
+func New(lexOut bool, astOut bool, iLocOut bool, armOut bool, sourcePath string) *CompilerContext {
+	return &CompilerContext{lexOut, astOut, iLocOut, armOut, sourcePath}
 }
 
 func (ctx *CompilerContext) SetSourcePath(path string) { ctx.sourcePath = path }
 func (ctx *CompilerContext) SetLex(b bool)             { ctx.lexOut = b }
 func (ctx *CompilerContext) SetAst(b bool)             { ctx.astOut = b }
 func (ctx *CompilerContext) SetILoc(b bool)            { ctx.iLocOut = b }
+func (ctx *CompilerContext) SetArm(b bool)             { ctx.armOut = b }
 
 // OutputLex returns true if the scanner should print-out its output to the user
 func (ctx *CompilerContext) OutputLex() bool { return ctx.lexOut }
@@ -28,6 +30,9 @@ func (ctx *CompilerContext) OutputAst() bool { return ctx.astOut }
 
 // OutputILoc returns true if we want to print out iloc to the user
 func (ctx *CompilerContext) OutputILoc() bool { return ctx.iLocOut }
+
+// OutputArm returns true if we want to print out arm (assembly) code to the user
+func (ctx *CompilerContext) OutputArm() bool { return ctx.armOut }
 
 // SourcePath returns the source path for a golite program
 func (ctx *CompilerContext) SourcePath() string { return ctx.sourcePath }
