@@ -976,7 +976,7 @@ func (r *Read) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 }
 func (r *Read) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	entry := symTable.Contains(r.Ident.TokenLiteral())
-	instruction := ir.NewRead(entry.GetRegId(), r.Ident.String(), symTable.PowerContains(r.Ident).GetRegId())
+	instruction := ir.NewRead(entry.GetRegId(), r.Ident.String(), symTable.PowerContains(r.Ident.Id).GetRegId())
 	instructions = append(instructions, instruction)
 	return instructions
 }
@@ -2418,6 +2418,8 @@ func (ie *InvocExpr) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	ie.targetReg = ir.NewRegister()
 
 	if ie.Ident.String() == "new" {
+		instructions = instructions[:len(instructions)-1] // remove the ldr in lvalue
+
 		newInst := ir.NewNew(ie.GetTargetReg(), ie.InnerArgs.Exprs[0].TokenLiteral())
 		instructions = append(instructions, newInst)
 		return instructions
