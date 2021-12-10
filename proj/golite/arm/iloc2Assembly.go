@@ -34,6 +34,7 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 		//funcEntry := symTable.Contains(funcfrag.Label)
 		//scopeSt := funcEntry.GetScopeST() // symbol table for the current scope
 		//countVar := 0                     // count the variables inside this scope
+
 		offset := 0
 		funcVarDict := make(map[int]int) // variable name -> offset, e.g. a -> -8, b -> -16
 		for _, instruction := range funcfrag.Body {
@@ -51,6 +52,9 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 			paramRegIds[paramEntry.GetRegId()] = id
 			utility.OccupyReg(id)
 		}
+		if funcfrag.Label == "main" {
+			utility.OccupyReg(0)
+		}
 
 		armInstructions = append(armInstructions, "\t.type "+funcfrag.Label+",%function")
 		armInstructions = append(armInstructions, "\t.global "+funcfrag.Label)
@@ -67,11 +71,20 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 		// save matching in a map
 		remainingInstruction := funcfrag.Body[1:]
 		for _, instruction := range remainingInstruction {
+			//armInstructions = append(armInstructions, "ILOC: " + instruction.String())
 			armInstructions = append(armInstructions, instruction.TranslateToAssembly(funcVarDict, paramRegIds)...)
 		}
 
 		armInstructions = append(armInstructions, epilogue(-funcSize)...)
-		armInstructions = append(armInstructions, "\t.size "+funcfrag.Label+", (. - "+funcfrag.Label+")")
+		armInstructions = append(armInstructions, "\t.size "+funcfrag.Label+",(.-"+funcfrag.Label+")")
+
+
+		for  id, _ := range scopeSt.ScopeParamNames {
+			utility.ReleaseReg(id)
+		}
+		if funcfrag.Label == "main" {
+			utility.ReleaseReg(0)
+		}
 	}
 
 	return armInstructions
@@ -79,18 +92,18 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 
 func prologue(size int) []string {
 	proInst := []string{}
-	proInst = append(proInst, "\tsub sp, sp, 16")
-	proInst = append(proInst, "\tstp x29, x30, [sp]")
-	proInst = append(proInst, "\tmov x29, sp")
-	proInst = append(proInst, fmt.Sprintf("\tsub sp, sp, #%v", size))
+	proInst = append(proInst, "\tsub sp,sp,16")
+	proInst = append(proInst, "\tstp x29,x30,[sp]")
+	proInst = append(proInst, "\tmov x29,sp")
+	proInst = append(proInst, fmt.Sprintf("\tsub sp,sp,#%v", size))
 	return proInst
 }
 
 func epilogue(size int) []string {
 	epiInst := []string{}
-	epiInst = append(epiInst, fmt.Sprintf( "\tadd sp, sp, #%v", size))
-	epiInst = append(epiInst, "\tldp x29, x30, [sp]")
-	epiInst = append(epiInst, "\tadd sp, sp, 16")
+	epiInst = append(epiInst, fmt.Sprintf( "\tadd sp,sp,#%v", size))
+	epiInst = append(epiInst, "\tldp x29,x30,[sp]")
+	epiInst = append(epiInst, "\tadd sp,sp,16")
 	epiInst = append(epiInst, "\tret")
 	return epiInst
 }
