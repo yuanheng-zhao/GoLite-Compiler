@@ -916,8 +916,10 @@ func (a *Assignment) TranslateToILoc(instructions []ir.Instruction, symTable *st
 	var instruction ir.Instruction
 	exprReg := a.Expr.GetTargetReg()
 	if a.Lvalue.Idents == nil || len(a.Lvalue.Idents) == 0 {
-		varName := a.Lvalue.Ident.TokenLiteral()
+		varName := a.Lvalue.Ident.String()
 		if symTable.CheckGlobalVariable(varName) {
+			//ldrInst := ir.NewLdr(a.Lvalue.Ident.targetReg, -1, -1, a.Lvalue.Ident.Id, ir.GLOBALVAR)
+			//instructions = append(instructions, ldrInst)
 			// global variable assignment
 			instruction = ir.NewStr(exprReg, -1, -1, varName, ir.GLOBALVAR)
 		} else {
@@ -974,7 +976,7 @@ func (r *Read) TypeCheck(errors []string, symTable *st.SymbolTable) []string {
 }
 func (r *Read) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	entry := symTable.Contains(r.Ident.TokenLiteral())
-	instruction := ir.NewRead(entry.GetRegId(), r.Ident.String())
+	instruction := ir.NewRead(entry.GetRegId(), r.Ident.String(), symTable.PowerContains(r.Ident).GetRegId())
 	instructions = append(instructions, instruction)
 	return instructions
 }
@@ -1590,6 +1592,12 @@ func (lv *LValue) getStructEntry(symTable *st.SymbolTable) st.Entry {
 }
 func (lv *LValue) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
 	instructions = lv.Ident.TranslateToILoc(instructions, symTable)
+
+	if symTable.CheckGlobalVariable(lv.Ident.String()) { // ldr global variable
+		ldrInst := ir.NewLdr(lv.Ident.targetReg, -1, -1, lv.Ident.Id, ir.GLOBALVAR)
+		instructions = append(instructions, ldrInst)
+	}
+
 	lv.targetReg = lv.Ident.targetReg
 	if lv.Idents == nil || len(lv.Idents) == 0 {
 		return instructions
@@ -2285,6 +2293,7 @@ func (selt *SelectorTerm) TranslateToILoc(instructions []ir.Instruction, symTabl
 	}
 	// Factor.id / Factor.id.id / ...
 	source := selt.Fact.targetReg
+	symTable = symTable.PowerContains(selt.Fact.String()).GetScopeST()
 	for _, ident := range selt.Idents {
 		instructions = ident.TranslateToILoc(instructions, symTable)
 		target := ir.NewRegister()
@@ -2596,24 +2605,21 @@ func (idl *IdentLiteral) TypeCheck(errors []string, symTable *st.SymbolTable) []
 	return errors
 }
 func (idl *IdentLiteral) TranslateToILoc(instructions []ir.Instruction, symTable *st.SymbolTable) []ir.Instruction {
-	//idl.targetReg = ir.NewRegister()
+
 	//if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
+	//	idl.targetReg = ir.NewRegister()
 	//	instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
 	//	instructions = append(instructions, instruction)
 	//} else {
-	//	// if semantic analysis is correct, at here idl.id must appear in some symbol tables at or above the current level
+	//	// use Powercontain or contains here?
 	//	sourceReg := symTable.PowerContains(idl.Id).GetRegId()
-	//	instruction := ir.NewMov(idl.targetReg, sourceReg, ir.AL, ir.REGISTER)
-	//	instructions = append(instructions, instruction)
+	//	idl.targetReg = sourceReg
 	//}
 
-	if symTable.CheckGlobalVariable(idl.Id) { // if the ident is a global variable
-		instruction := ir.NewLdr(idl.targetReg, -1, -1, idl.Id, ir.GLOBALVAR)
-		instructions = append(instructions, instruction)
-	} else {
-		sourceReg := symTable.PowerContains(idl.Id).GetRegId()
-		idl.targetReg = sourceReg
-	}
+	// use Powercontain or contains here?
+	sourceReg := symTable.PowerContains(idl.Id).GetRegId()
+	idl.targetReg = sourceReg
+
 	return instructions
 }
 func (idl *IdentLiteral) GetTargetReg() int {
