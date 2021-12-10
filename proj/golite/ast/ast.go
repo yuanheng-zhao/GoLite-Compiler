@@ -931,7 +931,11 @@ func (a *Assignment) TranslateToILoc(instructions []ir.Instruction, symTable *st
 		// struct assignment
 		structAddr := a.Lvalue.GetTargetReg()
 		field := a.Lvalue.Idents[len(a.Lvalue.Idents)-1].TokenLiteral()
-		structSt := symTable.PowerContains(field).GetScopeST()
+		structSt := symTable.PowerContains(a.Lvalue.Ident.String()).GetScopeST()
+		for i := 0; i < len(a.Lvalue.Idents)-1; i++ {
+			structSt = symTable.Contains(a.Lvalue.Idents[i].String()).GetScopeST()
+		}
+
 		countFields := 0
 		for _, currField := range structSt.ScopeParamNames {
 			if field == currField {

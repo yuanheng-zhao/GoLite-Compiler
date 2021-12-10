@@ -10,7 +10,7 @@ type SymbolTable struct {
 	htable          map[string]*Entry
 	ScopeName       string
 	ScopeParamTys   []types.Type
-	ScopeParamNames []string
+	ScopeParamNames []string // when used for funcEntry : param names; when used for structEntry : field names
 	//ProtoName 		string  // name of the prototype struct
 }
 
@@ -95,6 +95,9 @@ func (st *SymbolTable) GetCopy(scopeName string, parentSt *SymbolTable) *SymbolT
 		} // else do nothing
 		instanceSt.htable[key] = &duplicateEntry
 	}
+	//for _, fieldName := range st.ScopeParamNames {
+	//	instanceSt.ScopeParamNames = append(instanceSt.ScopeParamNames, fieldName)
+	//}
 	return instanceSt
 }
 
