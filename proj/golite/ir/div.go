@@ -52,30 +52,30 @@ func (instr *Div) String() string {
 
 }
 
-func (instr *Div) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Div) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
-	// load operand 1
-	source1Offset := funcVarDict[instr.sourceReg1]
-	source1RegId := NextAvailReg()
-	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source1RegId, source1Offset))
-
-	// load operand 2
-	source2RegId := NextAvailReg()
-	source2Offset := funcVarDict[instr.sourceReg2]
-	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
-
-	// divide
-	targetRegId := NextAvailReg()
-	instruction = append(instruction, fmt.Sprintf("sdiv x%v, x%v, x%v", targetRegId, source1RegId, source2RegId))
-
-	// store result
-	targetOffset := funcVarDict[instr.target]
-	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
-
-	ReleaseReg(source1RegId)
-	ReleaseReg(source2RegId)
-	ReleaseReg(targetRegId)
+	//// load operand 1
+	//source1Offset := funcVarDict[instr.sourceReg1]
+	//source1RegId := NextAvailReg()
+	//instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source1RegId, source1Offset))
+	//
+	//// load operand 2
+	//source2RegId := NextAvailReg()
+	//source2Offset := funcVarDict[instr.sourceReg2]
+	//instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
+	//
+	//// divide
+	//targetRegId := NextAvailReg()
+	//instruction = append(instruction, fmt.Sprintf("sdiv x%v, x%v, x%v", targetRegId, source1RegId, source2RegId))
+	//
+	//// store result
+	//targetOffset := funcVarDict[instr.target]
+	//instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
+	//
+	//ReleaseReg(source1RegId)
+	//ReleaseReg(source2RegId)
+	//ReleaseReg(targetRegId)
 
 	return instruction
 }

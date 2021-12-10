@@ -35,7 +35,7 @@ func (instr *Label) String() string {
 	return out.String()
 }
 
-func (instr *Label) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Label) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	inst := []string{}
 	return inst
 }

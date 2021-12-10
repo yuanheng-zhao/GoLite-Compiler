@@ -68,7 +68,7 @@ func (instr *Ret) String() string {
 
 }
 
-func (instr *Ret) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Ret) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	inst := []string{}
 
 	return inst

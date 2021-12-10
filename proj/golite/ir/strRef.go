@@ -50,7 +50,7 @@ func (instr *StrRef) String() string {
 	return out.String()
 }
 
-func (instr *StrRef) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *StrRef) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	inst := []string{}
 
 	return inst

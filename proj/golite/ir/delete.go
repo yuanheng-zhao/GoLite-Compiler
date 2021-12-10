@@ -36,7 +36,7 @@ func (instr *Delete) String() string {
 	return out.String()
 }
 
-func (instr *Delete) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Delete) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	inst := []string{}
 	return inst
 }

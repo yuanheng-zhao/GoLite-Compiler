@@ -38,7 +38,7 @@ type Instruction interface {
 
 	String() string // Return a string representation of this instruction
 
-	TranslateToAssembly(map[int]int) []string
+	TranslateToAssembly(map[int]int, map[int]int) []string
 }
 
 type FuncFrag struct {

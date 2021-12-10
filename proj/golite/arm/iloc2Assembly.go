@@ -1,19 +1,19 @@
-package ir
+package arm
 
 import (
 	"fmt"
+	"proj/golite/ir"
+	st "proj/golite/symboltable"
+	"proj/golite/utility"
 	"strings"
 )
 
-var regList map[int]bool
 
-func TranslateToAssembly(funcfrags []*FuncFrag) []string {
+
+func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []string {
 
 	armInstructions := []string{}
-	regList = make(map[int]bool)
-	for i := 0; i < 32; i++ {
-		regList[i] = true
-	}
+	utility.Init()
 
 	// program title
 	armInstructions = append(armInstructions, "\t.arch armv8-a")
@@ -42,13 +42,15 @@ func TranslateToAssembly(funcfrags []*FuncFrag) []string {
 				funcVarDict[instruction.GetTargets()[0]] = offset
 			}
 		}
-		//for _, e := range scopeSt.HashTable() {
-		//	entry := *e
-		//	offset -= -8
-		//	funcVarDict[entry.GetRegId()] = offset
-		//	countVar += 1
-		//	//fmt.Println(varName, entry.GetEntryType().GetName())
-		//}
+
+		entry := symTable.Contains(funcfrag.Label)
+		scopeSt := entry.GetScopeST()
+		paramRegIds := make(map[int]int)
+		for  id, paramName := range scopeSt.ScopeParamNames {
+			paramEntry := scopeSt.Contains(paramName)
+			paramRegIds[paramEntry.GetRegId()] = id
+			utility.OccupyReg(id)
+		}
 
 		armInstructions = append(armInstructions, "\t.type "+funcfrag.Label+",%function")
 		armInstructions = append(armInstructions, "\t.global "+funcfrag.Label)
@@ -61,9 +63,11 @@ func TranslateToAssembly(funcfrags []*FuncFrag) []string {
 		armInstructions = append(armInstructions, fmt.Sprintf("%v:", funcfrag.Label))
 		armInstructions = append(armInstructions, prologue(-funcSize)...)
 
+		// find regID of parameters from symtable
+		// save matching in a map
 		remainingInstruction := funcfrag.Body[1:]
 		for _, instruction := range remainingInstruction {
-			armInstructions = append(armInstructions, instruction.TranslateToAssembly(funcVarDict)...)
+			armInstructions = append(armInstructions, instruction.TranslateToAssembly(funcVarDict, paramRegIds)...)
 		}
 
 		armInstructions = append(armInstructions, epilogue(-funcSize)...)
@@ -89,24 +93,4 @@ func epilogue(size int) []string {
 	epiInst = append(epiInst, "\tadd sp, sp, 16")
 	epiInst = append(epiInst, "\tret")
 	return epiInst
-}
-
-func NextAvailReg() int {
-	//for id, val := range regList {
-	//	if val {
-	//		regList[id] = false
-	//		return id
-	//	}
-	//}
-	for i := 0; i < 32; i++ {
-		if regList[i] {
-			regList[i] = false
-			return i
-		}
-	}
-	return -1
-}
-
-func ReleaseReg(regId int) {
-	regList[regId] = true
 }

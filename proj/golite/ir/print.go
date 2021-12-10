@@ -44,7 +44,7 @@ func PrintArmFormat() []string {
 	return printInst
 }
 
-func (instr *Print) TranslateToAssembly(funcVarDict map[int]int) []string {
+func (instr *Print) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	inst := []string{}
 
 	return inst

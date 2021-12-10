@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 // Add represents a ADD instruction in ILOC
@@ -78,39 +79,46 @@ func (instr *Add) String() string {
 
 }
 
-func (instr *Add) TranslateToAssembly(funcVarDict map[int]int) []string {
-	addInst := []string{}
+func (instr *Add) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
+	instruction := []string{}
+	var source1RegId int
+	var source2RegId int
+	var isParam1 bool
+	var isParam2 bool
 
 	// load operand 1
-	sourceOffset := funcVarDict[instr.sourceReg]
-	sourceRegId := NextAvailReg()
-	//addInst = append(addInst, "ldr x"+string(sourceRegId)+", [x29, #"+string(sourceOffset))
-	addInst = append(addInst, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
+	if source1RegId, isParam1 = paramRegIds[instr.sourceReg]; !isParam1 {
+		source1Offset := funcVarDict[instr.sourceReg]
+		source1RegId = utility.NextAvailReg()
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v, [x29, #%v]", source1RegId, source1Offset))
+	}
 
 	// load operand 2
-	source2RegId := NextAvailReg()
-	if instr.opty == REGISTER {
-		source2Offset := funcVarDict[instr.operand]
-		//addInst = append(addInst, "ldr x"+string(source2RegId)+", [x29, #"+string(source2Offset))
-		addInst = append(addInst, fmt.Sprintf("ldr x%v, [x29, #%v]", source2RegId, source2Offset))
-	} else {
-		//addInst = append(addInst, "mov x"+string(source2RegId)+", #"+string(instr.operand))
-		addInst = append(addInst, fmt.Sprintf("mov x%v, #%v", source2RegId, instr.operand))
+	if source2RegId, isParam2 = paramRegIds[instr.operand]; !isParam2 {
+		source2RegId = utility.NextAvailReg()
+		if instr.opty == REGISTER {
+			source2Offset := funcVarDict[instr.operand]
+			instruction = append(instruction, fmt.Sprintf("\tldr x%v, [x29, #%v]", source2RegId, source2Offset))
+		} else {
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v, #%v", source2RegId, instr.operand))
+		}
 	}
 
 	// add
-	targetRegId := NextAvailReg()
-	//addInst = append(addInst, "add x"+string(targetRegId)+", x"+string(sourceRegId)+", x"+string(source2RegId))
-	addInst = append(addInst, fmt.Sprintf("add x%v, x%v, x%v", targetRegId, sourceRegId, source2RegId))
+	targetRegId := utility.NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("\tadd x%v, x%v, x%v", targetRegId, source1RegId, source2RegId))
 
 	// store result
 	targetOffset := funcVarDict[instr.target]
-	//addInst = append(addInst, "str x"+string(targetRegId)+", [x29, #"+string(targetOffset))
-	addInst = append(addInst, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v, [x29, #%v]", targetRegId, targetOffset))
 
-	ReleaseReg(sourceRegId)
-	ReleaseReg(source2RegId)
-	ReleaseReg(targetRegId)
+	utility.ReleaseReg(targetRegId)
+	if !isParam1 {
+		utility.ReleaseReg(source1RegId)
+	}
+	if !isParam2 {
+		utility.ReleaseReg(source2RegId)
+	}
 
-	return addInst
+	return instruction
 }

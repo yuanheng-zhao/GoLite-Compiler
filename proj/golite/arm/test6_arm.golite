@@ -1,0 +1,15 @@
+package main;
+
+import "fmt";
+
+func Add(a int, b int) int {
+    return a + b;
+}
+
+func main() {
+	var a, b, c int;
+	a = 129;
+	fmt.Scan(&b);
+	c = Add(a,b);
+	fmt.Println(c);
+}
