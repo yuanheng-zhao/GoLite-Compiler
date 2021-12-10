@@ -53,6 +53,7 @@ func (instr *Pop) String() string {
 func (instr *Pop) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
+	instruction = append(instruction, fmt.Sprintf("\tldr x0,[x29,#24]"))
 	offset := len(instr.sourceReg) * 8
 	if offset % 16 != 0 {
 		offset += 8

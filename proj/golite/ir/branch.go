@@ -63,6 +63,15 @@ func (instr *Branch) String() string {
 }
 
 func (instr *Branch) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string{
-	inst := []string{}
-	return inst
+	instruction := []string{}
+
+	if instr.flagVal == NE {
+		instruction = append(instruction, fmt.Sprintf("\tb.ne %v", instr.label))
+	} else if instr.flagVal == EQ {
+		instruction = append(instruction, fmt.Sprintf("\tb.eq %v", instr.label))
+	} else {
+		instruction = append(instruction, fmt.Sprintf("\tb %v", instr.label))
+	}
+
+	return instruction
 }

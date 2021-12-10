@@ -53,6 +53,7 @@ func (instr *Push) String() string {
 func (instr *Push) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
+	instruction = append(instruction, fmt.Sprintf("\tstr x0,[x29,#24]"))
 	offset := len(instr.sourceReg) * 8
 	if offset % 16 != 0 {
 		offset += 8

@@ -93,66 +93,71 @@ func (instr *Mov) String() string {
 func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
-	if instr.retFlag {
-		tempRegId := utility.NextAvailReg()
-		tempOffset := funcVarDict[instr.target]
-		instruction = append(instruction, fmt.Sprintf("\tmov x%v,x0",tempRegId))
-		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",tempRegId,tempOffset))
-		utility.ReleaseReg(tempRegId)
-		return instruction
-	}
-	var sourceRegId, targetRegId int
-	var isSourceParam, isTargetParam bool
-
-	if targetRegId, isTargetParam = paramRegIds[instr.target]; !isTargetParam {
-		targetRegId = utility.NextAvailReg()
-	}
-
-
-	if instr.opty == REGISTER {
-		if sourceRegId, isSourceParam = paramRegIds[instr.operand]; !isSourceParam {
-			sourceOffset := funcVarDict[instr.operand]
-			sourceRegId = utility.NextAvailReg()
-			instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", sourceRegId, sourceOffset))
+	if instr.flag == AL {
+		if instr.retFlag {
+			tempRegId := utility.NextAvailReg()
+			tempOffset := funcVarDict[instr.target]
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v,x0", tempRegId))
+			instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", tempRegId, tempOffset))
+			utility.ReleaseReg(tempRegId)
+			return instruction
 		}
-	}
+		var sourceRegId, targetRegId int
+		var isSourceParam, isTargetParam bool
 
-	if instr.opty == REGISTER {
-		instruction = append(instruction, fmt.Sprintf("\tmov x%v,x%v",targetRegId,sourceRegId))
-	} else {
-		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v",targetRegId,instr.operand))
-	}
+		if targetRegId, isTargetParam = paramRegIds[instr.target]; !isTargetParam {
+			targetRegId = utility.NextAvailReg()
+		}
 
-	if !isTargetParam {
-		targetOffset := funcVarDict[instr.target]
-		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", targetRegId,targetOffset))
-	}
+		if instr.opty == REGISTER {
+			if sourceRegId, isSourceParam = paramRegIds[instr.operand]; !isSourceParam {
+				sourceOffset := funcVarDict[instr.operand]
+				sourceRegId = utility.NextAvailReg()
+				instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", sourceRegId, sourceOffset))
+			}
+		}
 
-	if instr.opty == REGISTER && !isSourceParam {
-		utility.ReleaseReg(sourceRegId)
-	}
-	if !isTargetParam {
-		utility.ReleaseReg(targetRegId)
-	}
+		if instr.opty == REGISTER {
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v,x%v", targetRegId, sourceRegId))
+		} else {
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v", targetRegId, instr.operand))
+		}
 
-	//targetRegId := NextAvailReg()
-	//var sourceRegId int
-	//if instr.opty == IMMEDIATE {
-	//	instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", targetRegId, instr.operand))
-	//} else {
-	//	sourceRegId = NextAvailReg()
-	//	sourceOffset := funcVarDict[instr.operand]
-	//	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, sourceOffset))
-	//	instruction = append(instruction, fmt.Sprintf("mov x%v, x%v", targetRegId, sourceRegId))
-	//}
-	//
-	//targetOffset := funcVarDict[instr.target]
-	//instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
-	//
-	//ReleaseReg(targetRegId)
-	//if instr.opty == REGISTER {
-	//	ReleaseReg(sourceRegId)
-	//}
+		if !isTargetParam {
+			targetOffset := funcVarDict[instr.target]
+			instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", targetRegId, targetOffset))
+		}
+
+		if instr.opty == REGISTER && !isSourceParam {
+			utility.ReleaseReg(sourceRegId)
+		}
+		if !isTargetParam {
+			utility.ReleaseReg(targetRegId)
+		}
+	} else if instr.flag == LT {
+		label := NewLabelWithPre("skipMov")
+		instruction = append(instruction, fmt.Sprintf("\tb.ge %v", label))
+
+		cmpResReg := utility.NextAvailReg()
+		cmpResOffset := funcVarDict[instr.target]
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1",cmpResReg))
+		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",cmpResReg,cmpResOffset))
+
+		instruction = append(instruction, fmt.Sprintf("%v:",label))
+
+		utility.ReleaseReg(cmpResReg)
+	} else if instr.flag == NE {
+		label := NewLabelWithPre("skipMov")
+		instruction = append(instruction, fmt.Sprintf("\tb.eq %v",label))
+		cmpResReg := utility.NextAvailReg()
+		cmpResOffset := funcVarDict[instr.target]
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1",cmpResReg))
+		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]",cmpResReg,cmpResOffset))
+
+		instruction = append(instruction, fmt.Sprintf("%v:",label))
+
+		utility.ReleaseReg(cmpResReg)
+	}
 
 	return instruction
 }
