@@ -80,6 +80,7 @@ func TranslateToAssembly(funcfrags []*ir.FuncFrag, symTable *st.SymbolTable) []s
 		armInstructions = append(armInstructions, "\t.size "+funcfrag.Label+",(.-"+funcfrag.Label+")")
 
 
+
 		for  id, _ := range scopeSt.ScopeParamNames {
 			utility.ReleaseReg(id)
 		}
