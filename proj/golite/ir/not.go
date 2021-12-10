@@ -3,6 +3,7 @@ package ir
 import (
 	"bytes"
 	"fmt"
+	"proj/golite/utility"
 )
 
 type Not struct {
@@ -74,24 +75,24 @@ func (instr *Not) String() string {
 func (instr *Not) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[int]int) []string {
 	instruction := []string{}
 
-	//// load operand
-	//sourceRegId := NextAvailReg()
-	//if instr.opty == REGISTER {
-	//	source2Offset := funcVarDict[instr.operand]
-	//	instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, source2Offset))
-	//} else {
-	//	instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", sourceRegId, instr.operand))
-	//}
-	//
-	//targetRegId := NextAvailReg()
-	//instruction = append(instruction, fmt.Sprintf("neg x%v, x%v", targetRegId, sourceRegId))
-	//
-	//// store result
-	//targetOffset := funcVarDict[instr.target]
-	//instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
-	//
-	//ReleaseReg(sourceRegId)
-	//ReleaseReg(targetRegId)
+	// load operand
+	sourceRegId := utility.NextAvailReg()
+	if instr.opty == REGISTER {
+		source2Offset := funcVarDict[instr.operand]
+		instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, source2Offset))
+	} else {
+		instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", sourceRegId, instr.operand))
+	}
+
+	targetRegId := utility.NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("neg x%v, x%v", targetRegId, sourceRegId))
+
+	// store result
+	targetOffset := funcVarDict[instr.target]
+	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
+
+	utility.ReleaseReg(sourceRegId)
+	utility.ReleaseReg(targetRegId)
 
 	return instruction
 }
