@@ -4,7 +4,7 @@
 
 Testing for Scanner:
 1. The tested files should be saved in the directory of `proj/golite/scanner`.
-2. Run the command below from the directory `../proj-gohuskies/proj/golite/`,
+2. Usage of `-lex`: Run the command below from the directory `../proj-gohuskies/proj/golite/`,
    `go run golite.go -lex scanner/test1.golite`
 
 Expected test result:
@@ -33,7 +33,7 @@ Token.EOF(4)
 
 Testing for Parser:
 1. The tested files should be saved in the directory of `proj/golite/parser`.
-2. Run the command below from the directory `../proj-gohuskies/proj/golite/`,
+2. Usage of `-ast`: Run the command below from the directory `../proj-gohuskies/proj/golite/`,
    `go run golite.go -ast parser/test1_parser.golite`
 
 Expected test result:
@@ -54,7 +54,7 @@ a = 1+1;
 
 Testing for ILOC:
 1. The tested files should be saved in the directory of `proj/golite/iloc`.
-2. Run the command below from the directory `../proj-gohuskies/proj/golite/`,
+2. Usage of `-iloc`: Run the command below from the directory `../proj-gohuskies/proj/golite/`,
    `go run golite.go -iloc iloc/test3_iloc.golite`
 
 
