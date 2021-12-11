@@ -100,7 +100,7 @@ func (instr *Sub) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[i
 
 	// sub
 	targetRegId := utility.NextAvailReg()
-	instruction = append(instruction, fmt.Sprintf("\tsub x%v,x%v,x%v", targetRegId, source1RegId, source2RegId))
+	instruction = append(instruction, fmt.Sprintf("\tsubs x%v,x%v,x%v", targetRegId, source1RegId, source2RegId))
 
 	// store result
 	targetOffset := funcVarDict[instr.target]

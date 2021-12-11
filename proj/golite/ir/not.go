@@ -79,17 +79,21 @@ func (instr *Not) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[i
 	sourceRegId := utility.NextAvailReg()
 	if instr.opty == REGISTER {
 		source2Offset := funcVarDict[instr.operand]
-		instruction = append(instruction, fmt.Sprintf("ldr x%v, [x29, #%v]", sourceRegId, source2Offset))
+		instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", sourceRegId, source2Offset))
 	} else {
-		instruction = append(instruction, fmt.Sprintf("mov x%v, #%v", sourceRegId, instr.operand))
+		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v", sourceRegId, instr.operand))
 	}
 
 	targetRegId := utility.NextAvailReg()
-	instruction = append(instruction, fmt.Sprintf("neg x%v, x%v", targetRegId, sourceRegId))
+	//instruction = append(instruction, fmt.Sprintf("neg x%v, x%v", targetRegId, sourceRegId))
+	tempRedId := utility.NextAvailReg()
+	instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1",tempRedId))
+	instruction = append(instruction, fmt.Sprintf("\tsubs x%v,x%v,x%v",targetRegId,tempRedId,targetRegId))
+	utility.ReleaseReg(tempRedId)
 
 	// store result
 	targetOffset := funcVarDict[instr.target]
-	instruction = append(instruction, fmt.Sprintf("str x%v, [x29, #%v]", targetRegId, targetOffset))
+	instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", targetRegId, targetOffset))
 
 	utility.ReleaseReg(sourceRegId)
 	utility.ReleaseReg(targetRegId)

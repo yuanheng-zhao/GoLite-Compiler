@@ -134,51 +134,68 @@ func (instr *Mov) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[i
 		if !isTargetParam {
 			utility.ReleaseReg(targetRegId)
 		}
-	} else if instr.flag == LT {
+	} else {
 		label := NewLabelWithPre("skipMov")
-		instruction = append(instruction, fmt.Sprintf("\tb.ge %v", label))
-
 		cmpResReg := utility.NextAvailReg()
 		cmpResOffset := funcVarDict[instr.target]
-		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1", cmpResReg))
-		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", cmpResReg, cmpResOffset))
+		tempReg := utility.NextAvailReg()
+		if instr.flag == LT {
+			instruction = append(instruction, fmt.Sprintf("\tb.ge %v", label))
 
-		instruction = append(instruction, fmt.Sprintf("%v:", label))
+			if instr.opty == IMMEDIATE {
+				instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v", tempReg, instr.operand))
+			} else {
+				operandOffset := funcVarDict[instr.operand]
+				instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", tempReg, operandOffset))
+			}
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v,x%v", cmpResReg, tempReg))
+			instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", cmpResReg, cmpResOffset))
 
-		utility.ReleaseReg(cmpResReg)
-	} else if instr.flag == NE {
-		label := NewLabelWithPre("skipMov")
-		instruction = append(instruction, fmt.Sprintf("\tb.eq %v", label))
-		cmpResReg := utility.NextAvailReg()
-		cmpResOffset := funcVarDict[instr.target]
-		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1", cmpResReg))
-		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", cmpResReg, cmpResOffset))
+			instruction = append(instruction, fmt.Sprintf("%v:", label))
+		} else if instr.flag == NE {
+			instruction = append(instruction, fmt.Sprintf("\tb.eq %v", label))
 
-		instruction = append(instruction, fmt.Sprintf("%v:", label))
+			if instr.opty == IMMEDIATE {
+				instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v", tempReg, instr.operand))
+			} else {
+				operandOffset := funcVarDict[instr.operand]
+				instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", tempReg, operandOffset))
+			}
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v,x%v", cmpResReg, tempReg))
+			instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", cmpResReg, cmpResOffset))
 
-		utility.ReleaseReg(cmpResReg)
-	} else if instr.flag == LE {
-		label := NewLabelWithPre("skipMov")
-		instruction = append(instruction, fmt.Sprintf("\tb.gt %v", label))
-		cmpResReg := utility.NextAvailReg()
-		cmpResOffset := funcVarDict[instr.target]
-		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1", cmpResReg))
-		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", cmpResReg, cmpResOffset))
+			instruction = append(instruction, fmt.Sprintf("%v:", label))
+		} else if instr.flag == LE {
+			instruction = append(instruction, fmt.Sprintf("\tb.gt %v", label))
 
-		instruction = append(instruction, fmt.Sprintf("%v:", label))
-		utility.ReleaseReg(cmpResReg)
-	} else if instr.flag == EQ {
-		label := NewLabelWithPre("skipMov")
-		instruction = append(instruction, fmt.Sprintf("\tb.ne %v", label))
-		cmpResReg := utility.NextAvailReg()
-		cmpResOffset := funcVarDict[instr.target]
-		instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1", cmpResReg))
-		instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", cmpResReg, cmpResOffset))
+			if instr.opty == IMMEDIATE {
+				instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v", tempReg, instr.operand))
+			} else {
+				operandOffset := funcVarDict[instr.operand]
+				instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", tempReg, operandOffset))
+			}
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v,x%v", cmpResReg, tempReg))
+			instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", cmpResReg, cmpResOffset))
 
-		instruction = append(instruction, fmt.Sprintf("%v:", label))
+			instruction = append(instruction, fmt.Sprintf("%v:", label))
+		} else if instr.flag == EQ {
+			instruction = append(instruction, fmt.Sprintf("\tb.ne %v", label))
+
+			if instr.opty == IMMEDIATE {
+				instruction = append(instruction, fmt.Sprintf("\tmov x%v,#%v", tempReg, instr.operand))
+			} else {
+				operandOffset := funcVarDict[instr.operand]
+				instruction = append(instruction, fmt.Sprintf("\tldr x%v,[x29,#%v]", tempReg, operandOffset))
+			}
+			instruction = append(instruction, fmt.Sprintf("\tmov x%v,x%v", cmpResReg, tempReg))
+			instruction = append(instruction, fmt.Sprintf("\tstr x%v,[x29,#%v]", cmpResReg, cmpResOffset))
+
+			instruction = append(instruction, fmt.Sprintf("%v:", label))
+
+		}
+		utility.ReleaseReg(tempReg)
 		utility.ReleaseReg(cmpResReg)
 	}
-
 	return instruction
 }
 
