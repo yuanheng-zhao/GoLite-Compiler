@@ -88,7 +88,7 @@ func (instr *Not) TranslateToAssembly(funcVarDict map[int]int, paramRegIds map[i
 	//instruction = append(instruction, fmt.Sprintf("neg x%v, x%v", targetRegId, sourceRegId))
 	tempRedId := utility.NextAvailReg()
 	instruction = append(instruction, fmt.Sprintf("\tmov x%v,#1",tempRedId))
-	instruction = append(instruction, fmt.Sprintf("\tsubs x%v,x%v,x%v",targetRegId,tempRedId,targetRegId))
+	instruction = append(instruction, fmt.Sprintf("\tsubs x%v,x%v,x%v",targetRegId,tempRedId,sourceRegId))
 	utility.ReleaseReg(tempRedId)
 
 	// store result
