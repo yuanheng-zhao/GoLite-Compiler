@@ -3,7 +3,7 @@
 This is a project conducted and led in the course MPCS 51300 Compilers at the University of Chicago. In a group of two, we developed a multi-pass compiler in Go through building scanner, recursive-descent parser, generation of AST, intermediate representation (ILOC), and code generation (Armv8) from scratch.
 
 ## Group Members
-An Qi: qan001@uchicago.edu  
+Qi An: qan001@uchicago.edu  
 Yuanheng Zhao: yuanheng@uchicago.edu, jonathan.zhaoyh@gmail.com
 
 ## MileStone 1 - Scanner
